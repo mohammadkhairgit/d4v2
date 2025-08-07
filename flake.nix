@@ -74,7 +74,7 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          pkgs-static = if pkgs.stdenv.isDarwin then pkgs else pkgs.pkgsStatic;
+          pkgs-static = pkgs.pkgsStatic;
           pkgs-windows = pkgs.pkgsCross.mingwW64;
         in
         {
