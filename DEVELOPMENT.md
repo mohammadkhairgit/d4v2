@@ -1,7 +1,11 @@
 # Development Environment
 
-This is a C++ project, built via CMake.
+This is a C++ project, built via [CMake][cmake].
 As it requires multiple dependencies that might not be trivial to build or install, we use [Nix][nix] to streamline the build process.
+
+> [!IMPORTANT]
+> This project relies on the [Nix flakes][flakes] feature, which might not be enabled by default.
+> To enable it, set `extra-experimental-features = nix-command flakes` in your Nix config.
 
 ## Build
 
@@ -25,7 +29,7 @@ nix develop
 
 ### Manual Build
 
-Inside the shell, a manual CMake build can be done.
+Inside the shell, a manual [CMake][cmake] build can be done.
 
 To create and configure a build directory, use:
 
@@ -68,4 +72,5 @@ A manual build is usually not necessary as they automatically get built when req
 
 [cmake]: https://cmake.org
 [nix]: https://nixos.org
+[flakes]: https://wiki.nixos.org/wiki/Flakes
 [cachix]: https://www.cachix.org
