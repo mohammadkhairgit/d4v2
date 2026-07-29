@@ -420,6 +420,7 @@ private:
 
     m_solver->whichAreUnits(setOfVar.vars, unitsLit); // collect unit literals
 
+    // handle pure literal elimination
     m_pure_lits.clear();
     if (m_pure_lit_elim && setOfVar.nbProj > 10) {
       m_specs->preUpdate(unitsLit, m_pure_lits);

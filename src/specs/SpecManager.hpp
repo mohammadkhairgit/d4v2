@@ -32,6 +32,10 @@ public:
   static SpecManager *makeSpecManager(Config &config, ProblemManager &p,
                                       std::ostream &out);
 
+  /**
+     The following function check if a variable is a projected variable.
+     This condition work because the variables are ordered from projected to non-projected.
+   */
   inline bool isSelected(Var v) { return v <= m_nbProj; }
   inline bool isProj() { return m_nbProj != m_nbVar; }
   inline int nbSelected() { return m_nbProj; }

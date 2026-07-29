@@ -80,24 +80,27 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
 
   int nbVars = 0;
   int nbClauses = 0;
-
+  /* read the header and the clauses by first seeing what kind of problem we have
+  , meaning normal cnf (p cnf), weighted cnf (p wcnf) or a projected cnf (p pcnf). */
   for (;;) {
     in.skipSpace();
     if (in.eof())
       break;
-
+    
     if (in.currentChar() == 'p') {
       in.consumeChar();
       in.skipSpace();
 
       bool vpActivated = false;
+      // check if the problem is a projected cnf.
       if (in.currentChar() == 'p') {
         vpActivated = true;
         in.consumeChar();
       }
+      // check if the problem is a weighted cnf.
       if (in.currentChar() == 'w')
         in.consumeChar();
-
+      // check if the problem is a cnf. (also remove the 'cnf' part of the header)
       if (in.nextChar() != 'c' || in.nextChar() != 'n' || in.nextChar() != 'f')
         std::cerr << "PARSE ERROR! Unexpected char: " << in.currentChar()
                   << "\n",
@@ -109,9 +112,10 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
       if (vpActivated)
         std::cout << "c Some variable are marked: " << in.nextInt() << "\n";
       weightLit.resize(((nbVars + 1) << 1), 1);
-
       if (nbClauses < 0)
         printf("parse error\n"), exit(2);
+    /* parse lines terminated by 0, while considering the type of problem of the line with:
+    vp as projected, w as weighted, or comments with usefull information.*/
     } else if (in.currentChar() == 'v') {
       in.consumeChar();
       assert(in.currentChar() == 'p');
@@ -122,9 +126,10 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
       in.skipSpace();
       parseWeightedLit(in, weightLit);
     } else if (in.currentChar() == 'c') {
+      // process comments
       in.consumeChar();
       in.skipSimpleSpace();
-
+    
       if (in.currentChar() != 'p') {
         if (in.canConsume("max")) {
           readListIntTerminatedByZero(in, problemManager->getMaxVar());
@@ -150,8 +155,10 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
     } else {
       lits.clear();
       int v = -1;
+      /* process clauses, if we get a non-number character it will be considered as a 0 and then we will handle it in the next for loop.*/
       do {
         v = in.nextInt();
+        // Did we read a variable that is out of the range of the number of variables?
         if ((v > 0 && nbVars < v) || (-v > 0 && nbVars < -v))
           std::cerr << "PARSE ERROR! Number of variables incorrect: " << v
                     << "\n",
@@ -165,7 +172,7 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
       assert(lits.size());
       std::sort(lits.begin(), lits.end());
 
-      // remove redundant literal and check for tautology.
+      // remove redundant literal and check for tautology of the current clause.
       unsigned j = 1;
       bool isSat = false;
       for (unsigned i = 1; !isSat && i < lits.size(); i++) {

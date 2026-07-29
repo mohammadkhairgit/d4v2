@@ -215,9 +215,9 @@ protected:
   unsigned m_globalStamp;
 
   /**
-     'Allocate' an ammount of bytes.
+     'Allocate' an amount of bytes.
 
-     @param[in] nbBytes, the ammount of memory we want to allocate.
+     @param[in] nbBytes, the amount of memory we want to allocate.
 
      \return a pointer on the memory we allocate.
    */

@@ -96,26 +96,31 @@ void ProblemManagerCnf::normalize() {
     std::vector<bool> marked(m_nbVar + 1);
     std::vector<Var> remap(m_nbVar + 1);
     int i = 1;
+    // Mark projected variables to "move" them to the front of the variable list.
     for (Var v : m_selected) {
       marked[v] = true;
     }
+    // Give the projected variables an index using i
     for (Var v = 1; v <= m_nbVar; v++) {
       if (marked[v]) {
         remap[v] = i;
         i++;
       }
     }
+    // With the projected variables indexed from 1 to n, where n is the number of projected variables, we can now index the remaining variables.
     for (Var v = 1; v <= m_nbVar; v++) {
       if (!marked[v]) {
         remap[v] = i;
         i++;
       }
     }
+    // Give the original literals "l" in a clause "c" their new index based on their value in remap.
     for (auto &c : m_clauses) {
       for (auto &l : c) {
         l = Lit::makeLit(remap[l.var()], l.sign());
       }
     }
+    // Reinitialized m_selected to the new [1, 2, ..., n] indicies, where n is the number of projected variables.
     int sel = m_selected.size();
     m_selected.clear();
     for (int i = 1; i <= sel; i++) {

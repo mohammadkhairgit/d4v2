@@ -43,8 +43,10 @@ struct InfoCluster {
 class SpecManagerCnf : public SpecManager {
 protected:
   std::vector<std::vector<Lit>> m_clauses;
+  // Index of clauses that are not binary clauses. Index for the attribute m_clauses.
   std::vector<int> m_clausesNotBin;
   unsigned m_maxSizeClause;
+  // current partial assignment
   std::vector<lbool> m_currentValue;
   std::vector<SpecClauseInfo> m_infoClauses;
 

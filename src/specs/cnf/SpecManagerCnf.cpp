@@ -70,14 +70,18 @@ SpecManagerCnf::SpecManagerCnf(ProblemManager &p) {
     unsigned posNotBin = occList.size() - 1;
     for (auto const &idx : occList) {
       if (m_clauses[idx].size() == 2)
+      // Add index of binary clauses at the beginning then move forward for the next index of binary clause
         ptr[m_occurrence[i].nbBin++] = idx;
       else
+      // Add index of non-binary clauses at the end then move backward for the next index of non-binary clause
         ptr[posNotBin--] = idx;
     }
 
     m_occurrence[i].bin = ptr;
+    // At this point posNotBin is one index before the first index of non-binary clauses, so we need to add 1 to get the correct starting index of non-binary clauses
     m_occurrence[i].notBin = &ptr[posNotBin + 1];
     m_occurrence[i].nbNotBin = occList.size() - m_occurrence[i].nbBin;
+    // initialize pointer for the next literal
     ptr = &ptr[occList.size()];
   }
 
@@ -329,10 +333,10 @@ bool SpecManagerCnf::isSatisfiedClause(unsigned idx) {
 } // isSatisfiedClause
 
 /**
-   Test if a given clause is actually satisfied under the current
+   Test if a passed clause is satisfied under the current
    interpretation.
 
-   @param[in] idx, the clause index.
+   @param[in] c, the index of the clause to be tested for satisfaction.
 
    \return true if the clause is satisfied, false otherwise.
 */
@@ -404,6 +408,9 @@ void SpecManagerCnf::showFormula(std::ostream &out) {
   }
 } // showFormula
 
+/**
+   Display current assignment of the variables not ordered by how they were assigned
+ */
 void SpecManagerCnf::showTrail(std::ostream &out) {
   for (int i = 0; i < getNbVariable(); i++) {
     if (!varIsAssigned(i))
@@ -415,7 +422,7 @@ void SpecManagerCnf::showTrail(std::ostream &out) {
       out << ~l << " ";
   }
   out << "\n";
-} // showFormula
+} // showTrail
 
 void SpecManagerCnf::showCurrentFormula(std::ostream &out) {
   out << "p cnf " << getNbVariable() << " " << getNbClause() << "\n";
@@ -427,5 +434,5 @@ void SpecManagerCnf::showCurrentFormula(std::ostream &out) {
         out << l << " ";
     out << "0\n";
   }
-} // showFormula
+} // showCurrentFormula
 } // namespace d4

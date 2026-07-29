@@ -56,6 +56,7 @@ private:
   bool optDomConst;
   bool optReversePolarity;
 
+  // Number of recursive calls, only used for logging
   unsigned m_nbCallCall;
   unsigned m_nbSplit;
   unsigned m_callPartitioner;
@@ -347,7 +348,7 @@ private:
 
      @param[in] setOfVar, the current set of considered variables
      @param[in] unitsLit, the set of unit literal detected at this level
-     @param[in] freeVariable, the variables which become free
+     @param[in] freeVariable, the variables which become free. Do not appear in the current formula, because all their clauses are already true.
      @param[in] out, the stream we use to print out information.
 
      \return an element of type U that sums up the given CNF sub-formula using a
@@ -364,7 +365,7 @@ private:
     m_solver->whichAreUnits(setOfVar, unitsLit); // collect unit literals
     m_specs->preUpdate(unitsLit);
 
-    // compute the connected composant
+    // compute the connected component
     std::vector<std::vector<Var>> varConnected;
     int nbComponent = m_specs->computeConnectedComponent(varConnected, setOfVar,
                                                          freeVariable);
