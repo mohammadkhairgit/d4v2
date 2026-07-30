@@ -19,19 +19,13 @@
 #include "ParserDimacs.hpp"
 
 #include <algorithm>
+#include <cctype>
 
 #include "src/problem/ProblemManager.hpp"
 #include "src/problem/cnf/ProblemManagerCnf.hpp"
 
 namespace d4 {
 
-/**
- * @brief Read the next integar in the given stream while the value 0 is not
- * reached.
- *
- * @param in, the stream.
- * @param list, the list of integer we parsed.
- */
 void ParserDimacs::readListIntTerminatedByZero(BufferRead &in,
                                                std::vector<int> &list) {
   int v = -1;
@@ -42,13 +36,6 @@ void ParserDimacs::readListIntTerminatedByZero(BufferRead &in,
   } while (v);
 } // readListIntTerminatedByZero
 
-/**
- * @brief Parse a literal index and a weight and store the result in the given
- * vector.
- *
- * @param in, the stream buffer where we get the information.
- * @param weightLit, the place where is stored the data.
- */
 void ParserDimacs::parseWeightedLit(BufferRead &in,
                                     std::vector<double> &weightLit) {
   int lit = in.nextInt();
@@ -60,23 +47,12 @@ void ParserDimacs::parseWeightedLit(BufferRead &in,
     weightLit[((-lit) << 1) + 1] = w;
 } // parseWeightedLit
 
-/**
- * @brief Parse the dimacs format in order to extract CNF formula and
- * different set of variables such projected variables, max variables, ...
- * but also variables' weights if it is the case that the problem is
- * weighted.
- *
- * @param in, the stream buffer where are read the information.
- * @param problemManager, the place where is store the result.
- * @return an integer that gives the problem's number of variables.
- */
 int ParserDimacs::parse_DIMACS_main(BufferRead &in,
-                                    ProblemManagerCnf *problemManager) {
+                                    std::vector<std::vector<Lit>> &clauses,
+                                    std::vector<double> &weightLit,
+                                    std::vector<Var> &selected,
+                                    std::vector<Var> &maxVar) {
   std::vector<Lit> lits;
-  std::string s;
-
-  std::vector<double> &weightLit = problemManager->getWeightLit();
-  std::vector<std::vector<Lit>> &clauses = problemManager->getClauses();
 
   int nbVars = 0;
   int nbClauses = 0;
@@ -86,7 +62,7 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
     in.skipSpace();
     if (in.eof())
       break;
-    
+
     if (in.currentChar() == 'p') {
       in.consumeChar();
       in.skipSpace();
@@ -100,7 +76,7 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
       // check if the problem is a weighted cnf.
       if (in.currentChar() == 'w')
         in.consumeChar();
-      // check if the problem is a cnf. (also remove the 'cnf' part of the header)
+        // check if the problem is a cnf. (also remove the 'cnf' part of the header)
       if (in.nextChar() != 'c' || in.nextChar() != 'n' || in.nextChar() != 'f')
         std::cerr << "PARSE ERROR! Unexpected char: " << in.currentChar()
                   << "\n",
@@ -114,13 +90,13 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
       weightLit.resize(((nbVars + 1) << 1), 1);
       if (nbClauses < 0)
         printf("parse error\n"), exit(2);
-    /* parse lines terminated by 0, while considering the type of problem of the line with:
+      /* parse lines terminated by 0, while considering the type of problem of the line with:
     vp as projected, w as weighted, or comments with usefull information.*/
     } else if (in.currentChar() == 'v') {
       in.consumeChar();
       assert(in.currentChar() == 'p');
       in.consumeChar();
-      readListIntTerminatedByZero(in, problemManager->getSelectedVar());
+      readListIntTerminatedByZero(in, selected);
     } else if (in.currentChar() == 'w') {
       in.consumeChar();
       in.skipSpace();
@@ -129,14 +105,15 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
       // process comments
       in.consumeChar();
       in.skipSimpleSpace();
-    
+
       if (in.currentChar() != 'p') {
         if (in.canConsume("max")) {
-          readListIntTerminatedByZero(in, problemManager->getMaxVar());
-        } else if (in.canConsume("ind"))
-          readListIntTerminatedByZero(in, problemManager->getSelectedVar());
-        else
+          readListIntTerminatedByZero(in, maxVar);
+        } else if (in.canConsume("ind")) {
+          readListIntTerminatedByZero(in, selected);
+        } else {
           in.skipLine();
+        }
       } else {
         in.consumeChar();
         if (in.canConsume("weight")) {
@@ -145,12 +122,13 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
           // in this format we have an end line we have to consume.
           [[maybe_unused]] int endLine = in.nextInt();
           assert(!endLine);
-        } else if (in.canConsume("show"))
-          readListIntTerminatedByZero(in, problemManager->getSelectedVar());
-        else if (in.canConsume("ind")) {
-          readListIntTerminatedByZero(in, problemManager->getSelectedVar());
-        } else
+        } else if (in.canConsume("show")) {
+          readListIntTerminatedByZero(in, selected);
+        } else if (in.canConsume("ind")) {
+          readListIntTerminatedByZero(in, selected);
+        } else {
           in.skipLine();
+        }
       }
     } else {
       lits.clear();
@@ -172,7 +150,7 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
       assert(lits.size());
       std::sort(lits.begin(), lits.end());
 
-      // remove redundant literal and check for tautology of the current clause.
+      // Check for tautology of the current clause.
       unsigned j = 1;
       bool isSat = false;
       for (unsigned i = 1; !isSat && i < lits.size(); i++) {
@@ -182,7 +160,7 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
         lits[j++] = lits[i];
       }
 
-      // add the clause only if not SAT.
+      // add the clause only if it not a tautology.
       if (!isSat) {
         lits.resize(j);
         clauses.push_back(lits);
@@ -191,11 +169,82 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
   }
 
   return nbVars;
-}
+} // parse_DIMACS_main
+
+int ParserDimacs::parse_DIMACS_main(BufferRead &in,
+                                    ProblemManagerCnf *problemManager) {
+  std::vector<std::vector<Lit>> &clauses = problemManager->getClauses();
+  std::vector<double> &weightLit = problemManager->getWeightLit();
+  std::vector<Var> &selected = problemManager->getSelectedVar();
+  std::vector<Var> &maxVar = problemManager->getMaxVar();
+
+  int nbVars = parse_DIMACS_main(in, clauses, weightLit, selected, maxVar);
+  return nbVars;
+} // parse_DIMACS_main
 
 int ParserDimacs::parse_DIMACS(std::string input_stream,
                                ProblemManagerCnf *problemManager) {
   BufferRead in(input_stream);
   return parse_DIMACS_main(in, problemManager);
 } // parse_DIMACS
+
+int ParserDimacs::parse_DIMACS(
+    std::string input_stream, std::vector<std::vector<Lit>> &clauses,
+    std::vector<double> &weightLit, std::vector<Var> &selected,
+    std::vector<Var> &maxVar) {
+  BufferRead in(input_stream);
+  return parse_DIMACS_main(in, clauses, weightLit, selected, maxVar);
+} // parse_DIMACS
+
+void ParserDimacs::parse_alternative_main(BufferRead &in, int nbVars,
+                                         std::vector<std::vector<Lit>> &clauses) {
+  std::vector<Lit> lits;
+
+  for (;;) {
+    in.skipSpace();
+    if (in.eof())
+      break;
+
+    if (in.currentChar() == 'c' || in.currentChar() == 'p') {
+      in.skipLine();
+      continue;
+    }
+
+    if (!std::isdigit(static_cast<unsigned char>(in.currentChar())) &&
+        in.currentChar() != '-') {
+      in.skipLine();
+      continue;
+    }
+
+    lits.clear();
+    int v = -1;
+    /* process alternative clauses, if we get a non-number character it will be considered as a 0 and then we will handle it in the next for loop.*/
+    do {
+      v = in.nextInt();
+      // Did we read a variable that is out of the range of the number of variables?
+      if ((v > 0 && nbVars < v) || (-v > 0 && nbVars < -v))
+        std::cerr << "PARSE ERROR! Number of variables incorrect: " << v
+                  << "\n",
+            exit(3);
+
+      if (v)
+        lits.push_back((v > 0) ? Lit::makeLit(v, false)
+                               : Lit::makeLit(-v, true));
+    } while (v);
+
+    if (lits.size() == 0)
+      std::cerr << "PARSE ERROR! Empty alternative clause.\n", exit(3);
+    
+    std::sort(lits.begin(), lits.end());
+    auto last = std::unique(lits.begin(), lits.end());
+    lits.erase(last, lits.end());
+    clauses.push_back(lits);
+  }
+} // parse_alternative_main
+
+void ParserDimacs::parse_alternative(std::string input_stream, int nbVars,
+                                     std::vector<std::vector<Lit>> &clauses) {
+  BufferRead in(input_stream);
+  parse_alternative_main(in, nbVars, clauses);
+} // parse_alternative
 } // namespace d4

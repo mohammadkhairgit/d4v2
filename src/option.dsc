@@ -1,5 +1,6 @@
 ("help,h", "Help screen")
 ("input,i", boost::program_options::value<std::string>(), "(required) Path to get the input file")
+("alternative-input", boost::program_options::value<std::string>(), "Optional path to get the alternative-clause input file")
 ("input-type,it", boost::program_options::value<std::string>()->default_value("cnf"), "The input type")
 ("method,m", boost::program_options::value<std::string>(), "(required) The method we run (counting for model counting, ddnnf-compiler for decision DNNF compilation, projMC for a dedicated projected model counting, max#SAT for running a max#sat solver).")
 ("maxsharpsat-threshold",boost::program_options::value<double>()->default_value(-1.0),"Search if we can find an assignment such that the number of weighted models is greater than a given threshold.")

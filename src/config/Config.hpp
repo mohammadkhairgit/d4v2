@@ -8,6 +8,7 @@ namespace d4 {
 class Config {
 public:
   string input;
+  string alternative_input;
   string input_type;
   string method;
   double maxsharpsat_threshold;

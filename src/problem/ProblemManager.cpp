@@ -19,6 +19,7 @@
 
 #include <iostream>
 
+#include "cnf/ProblemManagerAll.hpp"
 #include "cnf/ProblemManagerCnf.hpp"
 #include "src/exceptions/FactoryException.hpp"
 
@@ -33,12 +34,18 @@ namespace d4 {
    \return the problem manager that fits the command line.
  */
 ProblemManager *ProblemManager::makeProblemManager(Config &config,
-                                                   std::ostream &out) {
+                                                   std::ostream &out) {                                                  
   out << "c [CONSTRUCTOR] Problem: " << config.input << " " << config.input_type
       << "\n";
+  if (!config.alternative_input.empty())
+    out << "[CONSTRUCTOR] Alternative input: " << config.alternative_input
+        << "\n";
 
   ProblemManager *ret = NULL;
-  if (config.input_type == "cnf" || config.input_type == "dimacs")
+  if ((config.input_type == "cnf" || config.input_type == "dimacs") &&
+      !config.alternative_input.empty()) {
+    ret = new ProblemManagerAll(config.input, config.alternative_input);
+  } else if (config.input_type == "cnf" || config.input_type == "dimacs")
     ret = new ProblemManagerCnf(config.input);
 
   if (!ret)

@@ -5,6 +5,7 @@ Config Config::default_values() {
   Config config;
 
   // input is required
+  config.alternative_input = "";
   config.input_type = "cnf";
   // method is required
   config.maxsharpsat_threshold = -1.0;

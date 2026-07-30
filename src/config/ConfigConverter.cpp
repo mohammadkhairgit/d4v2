@@ -6,6 +6,9 @@ Config
 ConfigConverter::fromVariablesMap(boost::program_options::variables_map &vm) {
   Config config;
   config.input = vm["input"].as<string>();
+    if (vm.count("alternative-input")) {
+        config.alternative_input = vm["alternative-input"].as<string>();
+    }
   config.input_type = vm["input-type"].as<string>();
 
   if (vm.count("method")) {

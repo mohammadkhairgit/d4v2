@@ -112,6 +112,7 @@ add_library(preprocs OBJECT
 )
 
 add_library(problem OBJECT
+    src/problem/cnf/ProblemManagerAll.cpp
     src/problem/cnf/ParserDimacs.cpp
     src/problem/cnf/ProblemManagerCnf.cpp
     src/problem/ProblemManager.cpp
