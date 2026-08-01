@@ -131,6 +131,7 @@ if(USE_GLUCOSE)
 endif()
 
 add_library(spec OBJECT
+    src/specs/cnf/SpecManagerAll.cpp
     src/specs/cnf/SpecManagerCnf.cpp
     src/specs/cnf/SpecManagerCnfDyn.cpp
     src/specs/SpecManager.cpp
@@ -161,7 +162,6 @@ target_link_libraries(core MtKaHyPar::mtkahypar GPMC::GPMC arjun glucose::glucos
 if(USE_GLUCOSE)
     target_link_libraries(core glucose::glucose)
 endif()
-
 add_executable(d4 src/Main.cpp)
 target_link_libraries(d4 core Boost::program_options)
 

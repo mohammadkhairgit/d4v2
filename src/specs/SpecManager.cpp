@@ -17,6 +17,7 @@
  */
 #include "SpecManager.hpp"
 
+#include "cnf/SpecManagerAll.hpp"
 #include "cnf/SpecManagerCnfDyn.hpp"
 #include "src/exceptions/FactoryException.hpp"
 
@@ -38,6 +39,8 @@ SpecManager *SpecManager::makeSpecManager(Config &config, ProblemManager &p,
   out << "c [CONSTRUCTOR SPEC] Spec manager: " << meth << " " << inType << "\n";
 
   if (inType == "cnf" || inType == "dimacs") {
+    if (meth == "dynamic" && !config.alternative_input.empty())
+      return new SpecManagerAll(p);
     if (meth == "dynamic")
       return new SpecManagerCnfDyn(p);
     return NULL;

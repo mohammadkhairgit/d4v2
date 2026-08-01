@@ -69,7 +69,7 @@ public:
   */
   virtual std::unique_ptr<ClauseType> clone() const = 0;
 
-  //TODO Mohammad: For alternative it is not clear if we return true when not all other literals are false.
+  //TODO: Mohammad,: For alternative it is not clear if we return true when not all other literals are false.
   /**
      Test whether the clause is satisfied by the passed partial assignment.
 
@@ -77,6 +77,13 @@ public:
       \return true if the clause is satisfied, false otherwise.
   */
   virtual bool isSatisfied(const std::vector<lbool> &currentValue) const = 0;
+
+   /**
+     Test whether the clause is satisfied by the passed partial assignment.
+
+      \return true if the clause is satisfied, false otherwise.
+  */
+  virtual bool isSatisfied() const = 0;
 
   /**
      \return the stored literals.
@@ -182,6 +189,13 @@ public:
     }
     return false;
   }
+
+   /**
+     \return true if at least one literal in the clause is satisfied.
+  */
+  bool isSatisfied() const override {
+   return m_nbSatLit > 0;
+  }
 };
 
 /**
@@ -218,6 +232,13 @@ public:
       }
     }
     return nbTrue == 1 && nbFalse == m_literals.size() - 1;
+  }
+
+  /**
+     \return true if exactly one literal in the clause is satisfied by the passed assignment and all other literals are unsatisfied.
+  */
+  bool isSatisfied() const override {
+    return m_nbSatLit == 1 && m_nbUnsatLit == m_literals.size() - 1;
   }
 };
 } // namespace d4
