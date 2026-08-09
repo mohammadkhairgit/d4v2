@@ -51,6 +51,7 @@ public:
     header.typeNode = TypeNode::TypeDetOrNode;
     header.stamp = 0;
     size = _size;
+    nbModels = T(0);
 
     unsigned pos = 0;
     for (unsigned i = 0; i < size; i++) {
@@ -115,6 +116,14 @@ public:
     return p->nbModels;
   }
 
+  /**
+   * Ask if the formula is satisfiable under an interpretation (fixedValue).
+   * 
+   * @param[in] node the node to compute the number of models, is equivalent to this.
+   * @param[in] func the functions vector containing the isSAT functions for each node type.
+   * @param[in] fixedValue the assignment we consider.
+   * @param[in] globalStamp the stamp number.
+   */
   static bool isSAT(Node<T> *node, bool (**func)(),
                     std::vector<ValueVar> &fixedValue, unsigned globalStamp) {
     auto *p = reinterpret_cast<DeterministicOrNode *>(node);
@@ -136,6 +145,15 @@ public:
     return false;
   }
 
+  /**
+   * Print the NNF representation of the node and its children.
+   * 
+   * @param[in] node the node to print, is equivalent to this.
+   * @param[in] func the functions vector containing the printNNF functions for each node type.
+   * @param[in] out the stream where we print out the formula.
+   * @param[in] idx the index of the node.
+   * @param[in] globalStamp the stamp number.
+   */
   static unsigned printNNF(Node<T> *node, unsigned (**func)(),
                            std::ostream &out, unsigned &idx,
                            unsigned globalStamp) {
