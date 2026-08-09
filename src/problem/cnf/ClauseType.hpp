@@ -69,6 +69,18 @@ public:
   */
   virtual std::unique_ptr<ClauseType> clone() const = 0;
 
+  /**
+     Write the cnf encoding to cnf_clauses and the auxiliary (new helpful variables) to created_vars. 
+     The next available variable id is passed in next_free_variable_number and updated to the next available variable id number after the encoding.
+
+     @param[out] cnf_clauses the CNF encoding of the clause.
+     @param[out] created_vars the auxiliary variables created by the encoding.
+     @param[in,out] next_free_variable_number the next available variable id number.
+  */
+  virtual void populate_as_cnf_clause(std::vector<std::vector<Lit>> &cnf_clauses,
+                                      std::vector<Var> &created_vars,
+                                      unsigned &next_free_variable_number) const = 0;
+
   //TODO: Mohammad,: For alternative it is not clear if we return true when not all other literals are false.
   /**
      Test whether the clause is satisfied by the passed partial assignment.
@@ -176,6 +188,14 @@ public:
     return std::make_unique<CNFClause>(*this);
   }
 
+   void populate_as_cnf_clause(std::vector<std::vector<Lit>> &cnf_clauses,
+                                             std::vector<Var> &created_vars,
+                                             unsigned &next_free_variable_number) const override {
+      (void)created_vars;
+      (void)next_free_variable_number;
+      cnf_clauses.push_back(m_literals);
+   }
+
   /**
      \return true if at least one literal in the clause is satisfied by the passed assignment.
   */
@@ -214,6 +234,48 @@ public:
   std::unique_ptr<ClauseType> clone() const override {
     return std::make_unique<AlternativeClause>(*this);
   }
+
+   void populate_as_cnf_clause(std::vector<std::vector<Lit>> &cnf_clauses,
+                                             std::vector<Var> &created_vars,
+                                             unsigned &next_free_variable_number) const override {
+      if (m_literals.empty()) {
+         cnf_clauses.emplace_back();
+         return;
+      }
+
+      cnf_clauses.push_back(m_literals);
+
+      if (m_literals.size() < 6) {
+         for (unsigned i = 0; i < m_literals.size(); i++) {
+            for (unsigned j = i + 1; j < m_literals.size(); j++)
+               cnf_clauses.push_back(std::vector<Lit>{~m_literals[i], ~m_literals[j]});
+         }
+         return;
+      }
+
+      std::vector<Var> auxVars;
+      auxVars.reserve(m_literals.size() - 1);
+      for (unsigned i = 0; i + 1 < m_literals.size(); i++) {
+         auxVars.push_back(next_free_variable_number);
+         created_vars.push_back(next_free_variable_number);
+         next_free_variable_number++;
+      }
+
+      cnf_clauses.push_back(std::vector<Lit>{~m_literals[0],
+                                                                  Lit::makeLit(auxVars[0], false)});
+      /** TODO: Mohammad, make sure again that everything here is correct */
+      for (unsigned i = 1; i + 1 < m_literals.size(); i++) {
+         Lit si = Lit::makeLit(auxVars[i], false);
+         Lit sim1 = Lit::makeLit(auxVars[i - 1], false);
+
+         cnf_clauses.push_back(std::vector<Lit>{~m_literals[i], si});
+         cnf_clauses.push_back(std::vector<Lit>{~sim1, si});
+         cnf_clauses.push_back(std::vector<Lit>{~m_literals[i], ~sim1});
+      }
+
+      cnf_clauses.push_back(std::vector<Lit>{~m_literals.back(),
+                                                                  ~Lit::makeLit(auxVars.back(), false)});
+   }
 
   /**
      \return true if exactly one literal in the clause is satisfied by the passed assignment and all other literals are unsatisfied.

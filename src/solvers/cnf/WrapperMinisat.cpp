@@ -24,10 +24,24 @@
 #include "minisat/Solver.hpp"
 #include "minisat/SolverTypes.hpp"
 #include "minisat/mtl/Vec.hpp"
+#include "src/problem/cnf/ProblemManagerAll.hpp"
 #include "src/problem/cnf/ProblemManagerCnf.hpp"
 
 namespace d4 {
 using minisat::toInt;
+
+namespace {
+void addClauseToSolver(minisat::Solver &solver, const std::vector<Lit> &clause) {
+  minisat::vec<minisat::Lit> lits;
+  for (const auto &lit : clause)
+    lits.push(minisat::mkLit(lit.var(), lit.sign()));
+
+  if (lits.size() == 0)
+    solver.addEmptyClause();
+  else
+    solver.addClause(lits);
+}
+} // namespace
 
 /**
    This function initializes the SAT solver with a given problem.  Warning: we
@@ -50,21 +64,28 @@ void WrapperMinisat::addClause(std::vector<Lit> &cl, bool learnt) {
 }
 void WrapperMinisat::initSolver(ProblemManager &p) {
   try {
-    ProblemManagerCnf &pcnf = dynamic_cast<ProblemManagerCnf &>(p);
+    std::vector<std::vector<Lit>> cnfClauses;
+    std::vector<Var> createdVars;
+    unsigned current_number_of_vars = p.getNbVar() + 1;
 
-    // say to the solver we have pcnf.getNbVar() variables.
-    while ((unsigned)s.nVars() <= pcnf.getNbVar())
-      s.newVar();
-    m_model.resize(pcnf.getNbVar() + 1, l_Undef);
-
-    // load the clauses
-    std::vector<std::vector<Lit>> &clauses = pcnf.getClauses();
-    for (auto &cl : clauses) {
-      minisat::vec<minisat::Lit> lits;
-      for (auto &l : cl)
-        lits.push(minisat::mkLit(l.var(), l.sign()));
-      s.addClause(lits);
+    if (auto *pmix = dynamic_cast<ProblemManagerAll *>(&p)) {
+      for (const auto &clause : pmix->getClauses())
+        clause->populate_as_cnf_clause(cnfClauses, createdVars,
+                                       current_number_of_vars);
+    } else {
+      ProblemManagerCnf &pcnf = dynamic_cast<ProblemManagerCnf &>(p);
+      cnfClauses = pcnf.getClauses();
     }
+
+    while ((unsigned)s.nVars() <= p.getNbVar())
+      s.newVar();
+    m_model.resize(p.getNbVar() + 1, l_Undef);
+
+    for (unsigned i = 0; i < createdVars.size(); i++)
+      s.newVar();
+
+    for (auto &cl : cnfClauses)
+      addClauseToSolver(s, cl);
   } catch (std::bad_cast &bc) {
     std::cerr << "bad_cast caught: " << bc.what() << '\n';
     std::cerr << "A CNF formula was expeted\n";
@@ -73,34 +94,18 @@ void WrapperMinisat::initSolver(ProblemManager &p) {
   m_activeModel = false;
   m_needModel = false;
   setNeedModel(m_needModel);
-  m_isInAssumption.resize(p.getNbVar() + 1, 0);
+  /** TODO: Mohammad, we save all assumptions even of the new variables is this wanted? 
+   * m_isInAssumption is only used here so it most likely does not matter much and can stay over all.
+  */
+  m_isInAssumption.resize(s.nVars(), 0);
 } // initSolver
 
 void WrapperMinisat::initSolver(ProblemManager &p,
                                 std::vector<std::vector<Lit>> &learnt) {
   try {
-    ProblemManagerCnf &pcnf = dynamic_cast<ProblemManagerCnf &>(p);
-
-    // force glucose to be in incremental mode in order to restart just after
-    // the assumptions.
-    // s.setIncrementalMode();
-
-    // say to the solver we have pcnf.getNbVar() variables.
-    while ((unsigned)s.nVars() <= pcnf.getNbVar())
-      s.newVar();
-    m_model.resize(pcnf.getNbVar() + 1, l_Undef);
-
-    // load the clauses
-    std::vector<std::vector<Lit>> &clauses = pcnf.getClauses();
-    for (auto &cl : clauses) {
-      minisat::vec<minisat::Lit> lits;
-      for (auto &l : cl)
-        lits.push(minisat::mkLit(l.var(), l.sign()));
-      s.addClause(lits);
-    }
-    for (auto cl : learnt) {
+    initSolver(p);
+    for (auto cl : learnt)
       addClause(cl, true);
-    }
   } catch (std::bad_cast &bc) {
     std::cerr << "bad_cast caught: " << bc.what() << '\n';
     std::cerr << "A CNF formula was expeted\n";
@@ -109,7 +114,7 @@ void WrapperMinisat::initSolver(ProblemManager &p,
   m_activeModel = false;
   m_needModel = false;
   setNeedModel(m_needModel);
-  m_isInAssumption.resize(p.getNbVar() + 1, 0);
+  m_isInAssumption.resize(s.nVars(), 0);
 }
 /**
    Call the SAT solver and return its result.

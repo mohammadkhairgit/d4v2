@@ -66,6 +66,8 @@ public:
   virtual U manageTop(std::vector<Var> &component) = 0;
   virtual U manageBranch(DataBranch<U> &e) = 0;
   virtual U manageDeterministOr(DataBranch<U> *elts, unsigned size) = 0;
+  virtual U manageNonBinaryDeterministOr(DataBranch<U> *elts,
+                                         unsigned size) = 0;
   virtual U manageDecomposableAnd(U *elts, unsigned size) = 0;
   virtual T count(U &result) = 0;
   virtual T count(U &result, std::vector<Lit> &assum) = 0;

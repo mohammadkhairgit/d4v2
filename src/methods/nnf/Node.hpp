@@ -32,6 +32,7 @@ template <class T> class FalseNode;
 
 enum TypeNode {
   TypeIteNode,
+  TypeDetOrNode,
   TypeUnaryNode,
   TypeDecAndNode,
   TypeTrueNode,

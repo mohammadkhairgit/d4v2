@@ -653,7 +653,7 @@ void SpecManagerAll::getCurrentClauses(std::vector<unsigned> &idxClauses,
     m_inCurrentComponent[v] = false;
 } // getCurrentClauses
 
-/**
+/** 
    Collect the non-binary active clause indices for the current component.
 */
 void SpecManagerAll::getCurrentClausesNotBin(std::vector<unsigned> &idxClauses,
@@ -668,5 +668,18 @@ void SpecManagerAll::getCurrentClausesNotBin(std::vector<unsigned> &idxClauses,
   for (auto &v : component)
     m_inCurrentComponent[v] = false;
 } // getCurrentClausesNotBin
+
+bool SpecManagerAll::getAlternativeBranch(std::vector<Var> &component,
+                                          std::vector<Lit> &clause) {
+  std::vector<unsigned> idxClauses;
+  getCurrentClauses(idxClauses, component);
+  for (auto idx : idxClauses) {
+    if (m_clauses[idx]->kind() != ClauseKind::Alternative)
+      continue;
+    clause = m_clauses[idx]->getLiterals();
+    return true;
+  }
+  return false;
+} // getAlternativeBranch
 
 } // namespace d4

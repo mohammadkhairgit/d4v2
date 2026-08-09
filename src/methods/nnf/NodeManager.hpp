@@ -23,6 +23,7 @@
 #include "../DataBranch.hpp"
 #include "BinaryDeterministicOrNode.hpp"
 #include "Branch.hpp"
+#include "DeterministicOrNode.hpp"
 #include "DecomposableAndNode.hpp"
 #include "FalseNode.hpp"
 #include "Node.hpp"
@@ -73,10 +74,10 @@ public:
   /**
      Create a binary deterministic OR node.
 
-     @param[in] left, the left branch.
-     @param[in] right, the right branch.
+     @param[in] left the left branch.
+     @param[in] right the right branch.
 
-     \return a BinaryDeterministicOrNode that make the disjcution between left
+     \return a BinaryDeterministicOrNode that make the disjunction between left
      and right.
   */
   Node<T> *makeBinaryDeterministicOrNode(DataBranch<Node<T> *> &left,
@@ -90,6 +91,27 @@ public:
   } // makeBinaryDeterministicOrNode
 
   /**
+     Create a non-binary deterministic OR node.
+
+     @param[in] elts the branches.
+     @param[in] size the number of branches.
+
+     \return a DeterministicOrNode that makes the disjunction between the branches.
+  */
+  Node<T> *makeDeterministicOrNode(DataBranch<Node<T> *> *elts, unsigned size) {
+    // Memory for the object itself
+    unsigned memoryNeeded = sizeof(DeterministicOrNode<T, U>);
+    for (unsigned i = 0; i < size; i++)
+    // Memory for the data of each branch
+      memoryNeeded += (elts[i].unitLits.size() + elts[i].freeVars.size()) * sizeof(U);
+    // For the array of branches
+    memoryNeeded += size * sizeof(Branch<T, U>);
+
+    uint8_t *data = NodeManager<T>::getMemory(memoryNeeded);
+    return new (data) DeterministicOrNode<T, U>(elts, size);
+  } // makeDeterministicOrNode
+
+  /**
      Create an unary branch.
 
      @param[in] left, the branch.
@@ -101,7 +123,7 @@ public:
         sizeof(UnaryNode<T, U>) + sizeof(U) * branch.sumFreeUnit();
     uint8_t *data = NodeManager<T>::getMemory(memoryNeeded);
     return new (data) UnaryNode<T, U>(branch);
-  } // makeBinaryDeterministicOrNode
+  } // makeUnaryNode
 
   /**
      Create a decomposable AND node.
@@ -139,6 +161,7 @@ public:
     func[TypeNode::TypeDecAndNode] = DecomposableAndNode<T, U>::computeNbModels;
     func[TypeNode::TypeIteNode] =
         BinaryDeterministicOrNode<T, U>::computeNbModels;
+    func[TypeNode::TypeDetOrNode] = DeterministicOrNode<T, U>::computeNbModels;
     func[TypeNode::TypeUnaryNode] = UnaryNode<T, U>::computeNbModels;
     func[TypeNode::TypeFalseNode] = FalseNode<T>::computeNbModels;
     func[TypeNode::TypeTrueNode] = TrueNode<T>::computeNbModels;
@@ -162,6 +185,7 @@ public:
 
     func[TypeNode::TypeDecAndNode] = DecomposableAndNode<T, U>::isSAT;
     func[TypeNode::TypeIteNode] = BinaryDeterministicOrNode<T, U>::isSAT;
+    func[TypeNode::TypeDetOrNode] = DeterministicOrNode<T, U>::isSAT;
     func[TypeNode::TypeUnaryNode] = UnaryNode<T, U>::isSAT;
     func[TypeNode::TypeFalseNode] = FalseNode<T>::isSAT;
     func[TypeNode::TypeTrueNode] = TrueNode<T>::isSAT;
@@ -176,6 +200,7 @@ public:
                                       std::ostream &, unsigned &, unsigned);
     func[TypeNode::TypeDecAndNode] = DecomposableAndNode<T, U>::printNNF;
     func[TypeNode::TypeIteNode] = BinaryDeterministicOrNode<T, U>::printNNF;
+    func[TypeNode::TypeDetOrNode] = DeterministicOrNode<T, U>::printNNF;
     func[TypeNode::TypeUnaryNode] = UnaryNode<T, U>::printNNF;
     func[TypeNode::TypeFalseNode] = FalseNode<T>::printNNF;
     func[TypeNode::TypeTrueNode] = TrueNode<T>::printNNF;
@@ -197,6 +222,7 @@ public:
 
     func[TypeNode::TypeDecAndNode] = DecomposableAndNode<T, U>::deallocate;
     func[TypeNode::TypeIteNode] = BinaryDeterministicOrNode<T, U>::deallocate;
+    func[TypeNode::TypeDetOrNode] = DeterministicOrNode<T, U>::deallocate;
     func[TypeNode::TypeUnaryNode] = UnaryNode<T, U>::deallocate;
     func[TypeNode::TypeFalseNode] = FalseNode<T>::deallocate;
     func[TypeNode::TypeTrueNode] = TrueNode<T>::deallocate;
@@ -269,6 +295,9 @@ public:
   virtual Node<T> *
   makeBinaryDeterministicOrNode(DataBranch<Node<T> *> &left,
                                 DataBranch<Node<T> *> &right) = 0;
+
+  virtual Node<T> *makeDeterministicOrNode(DataBranch<Node<T> *> *elts,
+                                           unsigned size) = 0;
 
   virtual Node<T> *makeUnaryNode(DataBranch<Node<T> *> &branch) = 0;
 

@@ -381,7 +381,7 @@ private:
 
         TmpEntry<U> cb = cacheActivated ? m_cache->searchInCache(connected)
                                         : NULL_CACHE_ENTRY;
-
+        /** TODO: does the cache work correctly even after the alternative changes? */
         if (cacheActivated)
           nbTestCacheVarSize[connected.size()]++;
         if (cacheActivated && cb.defined) {
@@ -429,6 +429,20 @@ private:
   } // setCurrentPriority
 
   /**
+     Should Return true if a not yet satisfied alternative clause exist in the current connected component, otherwise return false.
+
+     @param[in] connected the current connected component.
+     @param[out] clause the literals of the selected alternative clause.
+
+     \return true if a not yet satisfied alternative clause was found.
+  */
+  inline bool AlternativeOrVariableBranch(std::vector<Var> &connected,
+                                          std::vector<Lit> &clause) {
+    clause.clear();
+    return m_specs->getAlternativeBranch(connected, clause);
+  } // AlternativeOrVariableBranch
+
+  /**
      This function select a variable and compile a decision node.
 
      @param[in] connected, the set of variable present in the current problem.
@@ -438,6 +452,7 @@ private:
   */
   U computeDecisionNode(std::vector<Var> &connected, std::ostream &out) {
     std::vector<Var> cutSet;
+    std::vector<Lit> alternativeClause;
     bool hasPriority = false, hasVariable = false;
     for (auto v : connected) {
       if (m_specs->varIsAssigned(v) || !m_isDecisionVariable[v])
@@ -445,6 +460,36 @@ private:
       hasVariable = true;
       if ((hasPriority = m_currentPrioritySet[v]))
         break;
+    }
+
+    if (!hasPriority && AlternativeOrVariableBranch(connected, alternativeClause)) {
+      m_nbDecisionNode++;
+
+      std::vector<DataBranch<U>> branches;
+      branches.reserve(alternativeClause.size());
+      for (unsigned i = 0; i < alternativeClause.size(); i++) {
+        Lit l = alternativeClause[i];
+        // Only create a branch if needed.
+        if (m_solver->isInAssumption(l))
+          continue;
+        else if (m_solver->isInAssumption(~l))
+          /**
+          branches.push_back(DataBranch<U>());
+          branches.back().d = m_operation->manageBottom();
+          */
+         continue;
+        // This else should theoretically always get reached at least once per for loop. Meaning branches will always have at least one element.
+        else {
+          m_solver->pushAssumption(l);
+          branches.push_back(DataBranch<U>());
+          branches.back().d = compute_(connected, branches.back().unitLits,
+                                       branches.back().freeVars, out);
+          m_solver->popAssumption();
+        }
+      }
+
+      return m_operation->manageNonBinaryDeterministOr(branches.data(),
+                                                       branches.size());
     }
 
     if (hasVariable && !hasPriority && m_hCutSet->isReady(connected)) {

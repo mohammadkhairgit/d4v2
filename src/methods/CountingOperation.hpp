@@ -312,6 +312,22 @@ public:
   } // manageDeterministOr
 
   /**
+     Compute the sum of the given elements for a non-binary deterministic OR.
+
+     @param[in] elts the elements we want to combine.
+     @param[in] size the number of elements.
+
+     \return the sum of each element of elts.
+  */
+  T manageNonBinaryDeterministOr(DataBranch<T> *elts, unsigned size) {
+    T ret = 0;
+    for (unsigned i = 0; i < size; i++)
+      ret += elts[i].d * m_problem->computeWeightUnitFree<T>(elts[i].unitLits,
+                                                             elts[i].freeVars);
+    return ret;
+  } // manageNonBinaryDeterministOr
+
+  /**
      Compute the product of the given elements.
 
      @param[in] elts, the elements we want to get the product.

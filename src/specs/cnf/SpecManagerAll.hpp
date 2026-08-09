@@ -188,6 +188,17 @@ public:
   void getCurrentClausesNotBin(std::vector<unsigned> &idxClauses,
                                std::vector<Var> &component);
 
+    /**
+      Select one unsatisfied alternative clause from the passed connected component.
+
+      @param[in] component the connected component.
+      @param[out] clause the literals of the selected alternative clause.
+
+      \return true if an unsatisfied alternative clause was found, false otherwise.
+    */
+    bool getAlternativeBranch(std::vector<Var> &component,
+                     std::vector<Lit> &clause) override;
+
   /**
      Return the number of clauses in the mixed formula.
   */
