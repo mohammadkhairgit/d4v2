@@ -34,7 +34,7 @@ namespace d4 {
    \return the problem manager that fits the command line.
  */
 ProblemManager *ProblemManager::makeProblemManager(Config &config,
-                                                   std::ostream &out) {                                                  
+                                                   std::ostream &out) {
   out << "c [CONSTRUCTOR] Problem: " << config.input << " " << config.input_type
       << "\n";
   if (!config.alternative_input.empty())

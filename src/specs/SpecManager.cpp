@@ -43,9 +43,9 @@ SpecManager *SpecManager::makeSpecManager(Config &config, ProblemManager &p,
       return new SpecManagerAll(p);
     if (meth == "dynamic")
       return new SpecManagerCnfDyn(p);
-      /**
-       * TODO: was it intentional for the spec manager to return
-       */
+    /**
+     * TODO: was it intentional for the spec manager to return
+     */
     throw(FactoryException("Cannot create a SpecManager", __FILE__, __LINE__));
     return NULL;
   }

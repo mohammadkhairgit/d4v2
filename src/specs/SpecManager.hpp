@@ -34,7 +34,8 @@ public:
 
   /**
      The following function check if a variable is a projected variable.
-     This condition work because the variables are ordered from projected to non-projected.
+     This condition work because the variables are ordered from projected to
+     non-projected.
    */
   inline bool isSelected(Var v) { return v <= m_nbProj; }
   inline bool isProj() { return m_nbProj != m_nbVar; }
@@ -63,12 +64,14 @@ public:
   virtual int getNbVariable() = 0;
 
   /**
-     Pass an unsatisfied alternative clause and return true if it exist, otherwise return false.
+     Pass an unsatisfied alternative clause and return true if it exist,
+     otherwise return false.
 
      @param[in] component the current connected component.
      @param[out] clause the literals of the selected alternative clause.
 
-     \return true if a not yet satisfied alternative clause was found, false otherwise.
+     \return true if a not yet satisfied alternative clause was found, false
+     otherwise.
   */
   virtual bool getAlternativeBranch(std::vector<Var> &component,
                                     std::vector<Lit> &clause) {

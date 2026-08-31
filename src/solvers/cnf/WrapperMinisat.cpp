@@ -31,7 +31,8 @@ namespace d4 {
 using minisat::toInt;
 
 namespace {
-void addClauseToSolver(minisat::Solver &solver, const std::vector<Lit> &clause) {
+void addClauseToSolver(minisat::Solver &solver,
+                       const std::vector<Lit> &clause) {
   minisat::vec<minisat::Lit> lits;
   for (const auto &lit : clause)
     lits.push(minisat::mkLit(lit.var(), lit.sign()));
@@ -94,9 +95,10 @@ void WrapperMinisat::initSolver(ProblemManager &p) {
   m_activeModel = false;
   m_needModel = false;
   setNeedModel(m_needModel);
-  /** TODO: Mohammad, we save all assumptions even of the new variables is this wanted? 
-   * m_isInAssumption is only used here so it most likely does not matter much and can stay over all.
-  */
+  /** TODO: Mohammad, we save all assumptions even of the new variables is this
+   * wanted? m_isInAssumption is only used here so it most likely does not
+   * matter much and can stay over all.
+   */
   m_isInAssumption.resize(s.nVars(), 0);
 } // initSolver
 

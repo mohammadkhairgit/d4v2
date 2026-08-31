@@ -23,8 +23,8 @@
 #include "../DataBranch.hpp"
 #include "BinaryDeterministicOrNode.hpp"
 #include "Branch.hpp"
-#include "DeterministicOrNode.hpp"
 #include "DecomposableAndNode.hpp"
+#include "DeterministicOrNode.hpp"
 #include "FalseNode.hpp"
 #include "Node.hpp"
 #include "TrueNode.hpp"
@@ -96,14 +96,16 @@ public:
      @param[in] elts the branches.
      @param[in] size the number of branches.
 
-     \return a DeterministicOrNode that makes the disjunction between the branches.
+     \return a DeterministicOrNode that makes the disjunction between the
+     branches.
   */
   Node<T> *makeDeterministicOrNode(DataBranch<Node<T> *> *elts, unsigned size) {
     // Memory for the object itself
     unsigned memoryNeeded = sizeof(DeterministicOrNode<T, U>);
     for (unsigned i = 0; i < size; i++)
-    // Memory for the data of each branch
-      memoryNeeded += (elts[i].unitLits.size() + elts[i].freeVars.size()) * sizeof(U);
+      // Memory for the data of each branch
+      memoryNeeded +=
+          (elts[i].unitLits.size() + elts[i].freeVars.size()) * sizeof(U);
     // For the array of branches
     memoryNeeded += size * sizeof(Branch<T, U>);
 

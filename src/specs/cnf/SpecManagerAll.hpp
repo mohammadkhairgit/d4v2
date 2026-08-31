@@ -36,7 +36,8 @@ struct InfoClusterAll {
 };
 
 /**
-   Spec manager for mixed CNF and alternative clauses.
+   Spec manager for mixed CNF and alternative clauses (with possible extensions
+   through ClauseType).
 
    The class keeps the same component-discovery workflow as the CNF spec
    manager, but it stores clause objects and clause-local state through
@@ -44,46 +45,50 @@ struct InfoClusterAll {
  */
 class SpecManagerAll : public SpecManager {
 
-	/** TODO: Mohammad,: missing functions
-		freeVars
-		all getVecIdx...
-
-	*/
-private:
-	/**
-    TODO: Mohammad, Depending on what happen to the returned clause literals, this function return type is incorrect.
-		Because it return the literals without the Clause Type. For now leave in private until fix or choice.
+  /** TODO: Mohammad,: missing non mandatory functions
+          freeVars
+          all getVecIdx
+          NbBinaryClauses
+          getClause
+          ...
   */
-  inline const std::vector<Lit> &getClause(int idx) const {
-    assert((unsigned)idx < m_clauses.size());
-    return m_clauses[idx]->getLiterals();
-  }
-	
+private:
 protected:
-	// The stored clauses of different ClauseTypes.
+  // The stored clauses of different ClauseTypes.
   std::vector<std::unique_ptr<ClauseType>> m_clauses;
-	// Indices of clauses that are not binary clauses. Index for the attribute m_clauses.
+  // Indices of clauses that are not binary clauses. Index for the attribute
+  // m_clauses.
   std::vector<int> m_clausesNotBinary;
-	// The size of the largest clause in the mixed formula.
+  // The size of the largest clause in the mixed formula.
   unsigned m_maxSizeClause;
-	// current partial assignment
+  // current partial assignment
   std::vector<lbool> m_currentAssignment;
-	// Temporary marks that say whether a variable is in the passed connected component. Index start from 1 to m_nbVar. Index 0 is not used.
+
+  // Temporary marks that say whether a variable is in the passed connected
+  // component. Index start from 1 to m_nbVar. Index 0 is not used.
   std::vector<bool> m_inCurrentComponent;
-	// The occurrence data for each literal, contain the indices of clauses that contain the literal. Index start from 1 to (m_nbVar + 1) << 1. With positive literal at index 2 * v and negative literal at index 2 * v + 1 for variable v. Index 0 is not used.
+  // The occurrence data for each literal, contains a pointer to the indices of
+  // clauses that contain the literal and the current number of binary and not
+  // binary clauses. Index start from 1 to (m_nbVar + 1) << 1. With positive
+  // literal at index 2 * v and negative literal at index 2 * v + 1 for variable
+  // v. Index 0 is not used.
   std::vector<DataOccurrence> m_occurrence;
-	// The memory for the occurrence data.
+  // The memory for the clauses occurrence data.
   int *m_dataOccurrenceMemory;
 
-	// Temporary attributes
+  // Temporary attributes
 
-	// Temporary data for the connected component discovery following the principle of union-find.
+  // Temporary data for the connected component discovery following the
+  // principle of union-find.
   std::vector<InfoClusterAll> m_infoCluster;
-	// Temporary vector for the connected component discovery, that save the indices of clauses have been marked in m_mustUnMark. Used for resetting the view.
+  // Temporary vector for the connected component discovery, that save the
+  // indices of clauses that have been marked in m_mustUnMark. Used for
+  // resetting the view.
   std::vector<int> m_mustUnMark;
-	// Temporary vector for the connected component discovery, that mark whether a clause have been reviewed.
+  // Temporary vector for the connected component discovery, that mark whether a
+  // clause have been reviewed. Help in condition that create new components.
   std::vector<bool> m_markView;
-	// Temporary vector that mark clauses that need a new watcher literal.
+  // Temporary vector that mark clauses that need a new watcher literal.
   std::vector<int> m_reviewWatcher;
 
   /**
@@ -97,7 +102,8 @@ protected:
 
 public:
   /**
-     Build a mixed spec manager from the current mixed problem.
+     Build a mixed spec manager from the current mixed problem. Throw an error
+     if the problem is not a mixed problem.
   */
   SpecManagerAll(ProblemManager &p);
 
@@ -106,47 +112,53 @@ public:
   */
   ~SpecManagerAll() override;
 
-	/**
-	 * Build the connected components using union-find.
-	 * 
-	 * @param[out] varConnected the connected components to be built.
-	 * @param[in] setOfVar the variables to be considered for the connected components.
-	 * @param[out] freeVar the variables that are not in the current clauses.
-	 */
+  /**
+   * Build the connected components using union-find.
+   *
+   * @param[out] varConnected the connected components to be built.
+   * @param[in] setOfVar the variables to be considered for the connected
+   * components.
+   * @param[out] freeVar the variables that that have no remaining clauses.
+   */
   int computeConnectedComponent(std::vector<std::vector<Var>> &varConnected,
                                 std::vector<Var> &setOfVar,
                                 std::vector<Var> &freeVar) override;
 
-	/**
-	 * Build the connected components using union-find.
-	 * 
-	 * @param[out] varConnected the connected components to be built.
-	 * @param[in] setOfVar the variables to be considered for the connected components.
-	 * @param[out] freeVar the variables that are not in the current clauses.
-	 */
+  /**
+   * Build the connected components using union-find.
+   *
+   * @param[out] varConnected the connected components to be built.
+   * @param[in] setOfVar the variables to be considered for the connected
+   * components.
+   * @param[out] freeVar the variables that are not in the current clauses.
+   */
   int computeConnectedComponent(std::vector<ProjVars> &varConnected,
                                 std::vector<Var> &setOfVar,
                                 std::vector<Var> &freeVar) override;
 
-	/**
-	 * Consider the passed literals as assigned and update the occurrence data and watchers if conditions are met.
-	 *  TODO: The implementation can be simplified. (A lot of duplicated code)
-	 * @param[in] lits the new assignments
-	 */
+  /**
+   * Consider the passed literals as assigned and update the occurrence data and
+   * watchers if conditions are met.
+   *
+   * @param[in] lits the new assignments
+   */
   void preUpdate(std::vector<Lit> &lits) override;
-	/**
-	 * Consider the passed literals as assigned and update the occurrence data and watchers if conditions are met.
-	 * 
-	 * @param[in] lits the new assignments
-	 * @param[in] pure the pure literals
-	 */
+  /**
+   * TODO: Not tested yet.
+   * Consider the passed literals as assigned and update the occurrence data and
+   * watchers if conditions are met.
+   *
+   * @param[in] lits the new assignments
+   * @param[out] pure the pure literals
+   */
   void preUpdate(std::vector<Lit> &lits, std::vector<Lit> &pure) override;
 
-	/**
-	 * Consider the passed literals as unassigned and update the occurrence data by reverting the updates done in PreUpdate in reverse order.
-	 * 
-	 * @param[in] lits the literals to be unassigned
-	 */
+  /**
+   * Consider the passed literals as unassigned and update the occurrence data
+   * by reverting the updates done in PreUpdate in reverse order.
+   *
+   * @param[in] lits the literals to be unassigned
+   */
   void postUpdate(std::vector<Lit> &lits) override;
 
   bool litIsAssigned(Lit l) override;
@@ -172,8 +184,10 @@ public:
      Collect all clause indices from the current connected component that are
      still unsatisfied.
 
-		 @param[out] idxClauses the indices of clauses that are still unsatisfied.
-		 @param[in] component the variables in the current connected component.
+                 @param[out] idxClauses the indices of clauses that are still
+     unsatisfied.
+                 @param[in] component the variables in the current connected
+     component.
   */
   void getCurrentClauses(std::vector<unsigned> &idxClauses,
                          std::vector<Var> &component);
@@ -182,22 +196,37 @@ public:
      Collect only the non-binary clause indices from the current connected
      component that are still unsatisfied.
 
-		 @param[out] idxClauses the indices of clauses that are still unsatisfied.
-		 @param[in] component the variables in the current connected component.
+                 @param[out] idxClauses the indices of clauses that are still
+     unsatisfied.
+                 @param[in] component the variables in the current connected
+     component.
   */
   void getCurrentClausesNotBin(std::vector<unsigned> &idxClauses,
                                std::vector<Var> &component);
+  /**
+   * Collect only the binary clause indices from the current connected component
+   that are still unsatisfied.
 
-    /**
-      Select one unsatisfied alternative clause from the passed connected component.
+               @param[out] idxClauses the indices of clauses that are still
+   unsatisfied.
+               @param[in] component the variables in the current connected
+   component.
+  */
+  void getCurrentClausesBin(std::vector<unsigned> &idxClauses,
+                            std::vector<Var> &component);
 
-      @param[in] component the connected component.
-      @param[out] clause the literals of the selected alternative clause.
+  /**
+    Select one unsatisfied alternative clause from the passed connected
+    component.
 
-      \return true if an unsatisfied alternative clause was found, false otherwise.
-    */
-    bool getAlternativeBranch(std::vector<Var> &component,
-                     std::vector<Lit> &clause) override;
+    @param[in] component the connected component.
+    @param[out] clause the literals of the selected alternative clause.
+
+    \return true if an unsatisfied alternative clause was found, false
+    otherwise.
+  */
+  bool getAlternativeBranch(std::vector<Var> &component,
+                            std::vector<Lit> &clause) override;
 
   /**
      Return the number of clauses in the mixed formula.
@@ -210,8 +239,8 @@ public:
   inline int getMaxSizeClause() const { return m_maxSizeClause; }
 
   /**
-     Return the sum of clause sizes in the mixed formula.
-  */
+   * Return the sum of clause sizes in the mixed formula.
+   */
   inline int getSumSizeClauses() const {
     int sum = 0;
     for (const auto &clause : m_clauses)
@@ -219,61 +248,100 @@ public:
     return sum;
   }
 
-
-	/**
-	 * Return the original clause size for the given index
-	 */
-	inline int getInitSize(int idx) const {
-		assert((unsigned)idx < m_clauses.size());
-		return m_clauses[idx]->size();
-	}
-
   /**
-     Return the current literal count for a clause after removal of negatively assigned literals.
-  */
-  inline int getCurrentSize(int idx) const {
-    return (int)m_clauses[idx]->size() - (int)m_clauses[idx]->getNbUnsatLit();
+   * Return the original clause size for the given index
+   *
+   * @param[in] idx the index of the clause in m_clauses
+   * @return the original clause size
+   */
+  inline int getInitSize(int idx) const {
+    assert((unsigned)idx < m_clauses.size());
+    return m_clauses[idx]->size();
   }
 
-	/**
-	 * Return the number of current binary clauses that contain the given variable.
-	 */
-	inline int getNbBinaryClause(Var v) {
-		return getNbBinaryClause(Lit::makeLitFalse(v)) + getNbBinaryClause(Lit::makeLitTrue(v));
-	}
+  /**
+   * Return the current clause size for the given index, which is the original
+   * size minus the number of satisfied and unsatisfied literals.
+   *
+   * @param[in] idx the index of the clause in m_clauses
+   * @return the current clause size
+   */
+  inline int getCurrentSize(int idx) const {
+    return (int)m_clauses[idx]->size() - (int)m_clauses[idx]->getNbUnsatLit() -
+           (int)m_clauses[idx]->getNbSatLit();
+  }
 
-	/**
-	 * Return the number of currentbinary clauses that contain the given literal.
-	 */
-	inline int getNbBinaryClause(Lit l) {
-		int nbBin = m_occurrence[l.intern()].nbBin;
-		for (unsigned i = 0; i < m_occurrence[l.intern()].nbNotBin; i++) {
-			int idxCl = m_occurrence[l.intern()].notBin[i];
-			if (getCurrentSize(idxCl) == 2)
-				nbBin++;
-	}
-	return nbBin;
-}
+  /**
+   * Return the number of current binary clauses that contain the given
+   * variable.
+   * Where a binary clause always remains a binary clause, even after
+   * satisfaction and non binary clauses are only binary if they are of current
+   * size 2. (Size 1 does not count)
+   *
+   * @param[in] v the variable to be checked
+   * @return the number of current binary clauses that contain the variable
+   */
+  inline int getNbBinaryClause(Var v) {
+    return getNbBinaryClause(Lit::makeLitFalse(v)) +
+           getNbBinaryClause(Lit::makeLitTrue(v));
+  }
 
-	// Return the number of current non-binary clauses that contain the given literal.
-	inline int getNbNotBinaryClause(Lit l) {
-		return getNbClause(l) - getNbBinaryClause(l);
-	}
+  /**
+   * Return the number of currentbinary clauses that contain the given literal.
+   * Where a binary clause always remains a binary clause, even after
+   * satisfaction and non binary clauses are only binary if they are of current
+   * size 2. (Size 1 does not count)
+   *
+   * @param[in] l the literal to be checked
+   * @return the number of current binary clauses that contain the literal
+   */
+  inline int getNbBinaryClause(Lit l) {
+    int nbBin = m_occurrence[l.intern()].nbBin;
+    for (unsigned i = 0; i < m_occurrence[l.intern()].nbNotBin; i++) {
+      int idxCl = m_occurrence[l.intern()].notBin[i];
+      if (getCurrentSize(idxCl) == 2)
+        nbBin++;
+    }
+    return nbBin;
+  }
 
-	// return the number of current non-binary clauses that contain the given variable.
-	inline int getNbNotBinaryClause(Var v) {
-		return getNbClause(v) - getNbBinaryClause(v);
-	}
+  /**
+   * Return the number of current non-binary clauses that contain the given
+   * literal. Where a binary clause always remains a binary clause, even after
+   * satisfaction and non binary clauses are only binary if they are of current
+   * size 2. (Size 1 does not count)
+   *
+   * @param[in] l the literal to be checked
+   * @return the number of current non-binary clauses that contain the literal
+   */
+  inline int getNbNotBinaryClause(Lit l) {
+    return getNbClause(l) - getNbBinaryClause(l);
+  }
 
-	// Return the number of current clauses that contain the given variable.
-	inline int getNbClause(Var v) {
-		return getNbClause(Lit::makeLitFalse(v)) + getNbClause(Lit::makeLitTrue(v));
-	}
+  /**
+   * Return the number of current non-binary clauses that contain the given
+   * variable. Where a binary clause always remains a binary clause, even after
+   * satisfaction and non binary clauses are only binary if they are of current
+   * size 2. (Size 1 does not count)
+   *
+   * @param[in] v the variable to be checked
+   * @return the number of current non-binary clauses that contain the variable
+   */
+  inline int getNbNotBinaryClause(Var v) {
+    return getNbClause(v) - getNbBinaryClause(v);
+  }
 
-	// Return the number of current clauses that contain the given literal.
-	inline unsigned getNbClause(Lit l) {
-		return m_occurrence[l.intern()].nbBin + m_occurrence[l.intern()].nbNotBin;
-	}
+  // Return the number of current clauses (clauses that are not satisfied yet)
+  // that contain the given variable.
+  inline int getNbClause(Var v) {
+    return getNbClause(Lit::makeLitFalse(v)) + getNbClause(Lit::makeLitTrue(v));
+  }
+
+  // Return the number of current clauses (clauses that are not satisfied yet)
+  // that contain the given literal.
+  inline unsigned getNbClause(Lit l) {
+    return m_occurrence[l.intern()].nbBin + m_occurrence[l.intern()].nbNotBin;
+  }
 
   /**
      Return the clause satisfaction status under the current assignment.
@@ -283,34 +351,40 @@ public:
     return m_clauses[idx]->isSatisfied();
   }
 
-	/**
-   Test if a passed clause is satisfied under the current
-   interpretation only if it is of a known ClauseKind. Otherwise, return false.
-
-   @param[in] c the clause to be tested for satisfaction.
-
-   \return true if the clause of a known ClauseKind and is satisfied.
-*/
-	inline bool isSatisfiedClause(std::vector<Lit> &c, ClauseKind kind) {
-		if (kind == ClauseKind::Cnf)
-			return std::make_unique<CNFClause>(c)->isSatisfied(m_currentAssignment);
-		else if (kind == ClauseKind::Alternative)
-			return std::make_unique<AlternativeClause>(c)->isSatisfied(m_currentAssignment);
-		return false;
-	}
+  /**
+   * Test if a passed clause is satisfied under the current interpretation only
+   * if it is of a known ClauseKind. Otherwise, return false.
+   * @param[in] c the clause to be tested for satisfaction.
+   * @param[in] kind the kind of the clause.
+   * @return true if the clause of a known ClauseKind and is satisfied.
+   */
+  inline bool isSatisfiedClause(std::vector<Lit> &c, ClauseKind kind) {
+    if (kind == ClauseKind::Cnf)
+      return std::make_unique<CNFClause>(c)->isSatisfied(m_currentAssignment);
+    else if (kind == ClauseKind::Alternative)
+      return std::make_unique<AlternativeClause>(c)->isSatisfied(
+          m_currentAssignment);
+    return false;
+  }
 
   /**
-     Return true when a clause is unsatisfied and its watcher still belongs to
-     the current connected component.
-  */
-  inline bool isNotSatisfiedClauseAndInComponent(
-      int idx, std::vector<bool> &inCurrentComponent) {
+   * Return true when a clause is unsatisfied and its watcher still belongs to
+   * the current connected component.
+   *
+   * @param[in] idx the index of the clause in m_clauses
+   * @param[in] inCurrentComponent the temporary marks for the current connected
+   * component.
+   * @return true if the clause is unsatisfied and its watcher is in the current
+   * connected
+   */
+  inline bool
+  isNotSatisfiedClauseAndInComponent(int idx,
+                                     std::vector<bool> &inCurrentComponent) {
     if (isSatisfiedClause((unsigned)idx))
       return false;
     assert(m_clauses[idx]->getWatcher() != lit_Undef);
     assert(!litIsAssigned(m_clauses[idx]->getWatcher()));
     return inCurrentComponent[m_clauses[idx]->getWatcher().var()];
   }
-
 };
 } // namespace d4

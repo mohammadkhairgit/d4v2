@@ -58,7 +58,8 @@ std::vector<Var> ProblemManagerAll::buildRemap() const {
       idx++;
     }
   }
-  // With the projected variables indexed from 1 to n, where n is the number of projected variables, we can now index the remaining variables.
+  // With the projected variables indexed from 1 to n, where n is the number of
+  // projected variables, we can now index the remaining variables.
   for (Var v = 1; v <= m_nbVar; v++) {
     if (!marked[v]) {
       remap[v] = idx;
@@ -75,7 +76,6 @@ void ProblemManagerAll::remapClauses(
   for (auto &clause : clauses)
     clause->remap(remap);
 }
-
 
 ProblemManagerAll::ProblemManagerAll() { m_nbVar = 0; }
 
@@ -98,6 +98,7 @@ ProblemManagerAll::ProblemManagerAll(std::string &nameFile,
   normalize();
 } // constructor
 
+/** TODO: This constructor can only be used with a ProblemManagerAll object.**/
 ProblemManagerAll::ProblemManagerAll(ProblemManager *problem) {
   m_nbVar = problem->getNbVar();
   m_weightLit = problem->getWeightLit();
@@ -115,8 +116,8 @@ ProblemManagerAll::ProblemManagerAll(ProblemManager *problem) {
   }
 } // constructor
 
-ProblemManagerAll *ProblemManagerAll::createFromProblemWithNoClauses(
-    ProblemManager *problem) {
+ProblemManagerAll *
+ProblemManagerAll::createFromProblemWithNoClauses(ProblemManager *problem) {
   auto *ret = new ProblemManagerAll();
   ret->m_nbVar = problem->getNbVar();
   ret->m_weightLit = problem->getWeightLit();
@@ -133,8 +134,7 @@ ProblemManagerAll *ProblemManagerAll::createFromProblemWithNoClauses(
 
 ProblemManagerAll::ProblemManagerAll(int nbVar, std::vector<double> &weightLit,
                                      std::vector<double> &weightVar,
-                                     std::vector<Var> &selected,
-                                     int freevars) {
+                                     std::vector<Var> &selected, int freevars) {
   m_nbVar = nbVar;
   m_weightLit = weightLit;
   m_weightVar = weightVar;
@@ -148,7 +148,8 @@ void ProblemManagerAll::normalize() {
     std::vector<Var> remap = buildRemap();
     remapClauses(m_clauses, remap);
 
-    // Reinitialized m_selected to the new [1, 2, ..., n] indicies, where n is the number of projected variables.
+    // Reinitialized m_selected to the new [1, 2, ..., n] indicies, where n is
+    // the number of projected variables.
     int sel = m_selected.size();
     m_selected.clear();
     for (int i = 1; i <= sel; i++)
@@ -166,29 +167,28 @@ ProblemManager *ProblemManagerAll::getUnsatProblem() {
   ret->m_isUnsat = true;
 
   Lit l = Lit::makeLit(1, false);
-  ret->m_clauses.push_back(
-      std::make_unique<CNFClause>(std::vector<Lit>{l}));
+  ret->m_clauses.push_back(std::make_unique<CNFClause>(std::vector<Lit>{l}));
   ret->m_clauses.push_back(
       std::make_unique<CNFClause>(std::vector<Lit>{l.neg()}));
 
   return ret;
 } // getUnsatProblem
 
-ProblemManager *ProblemManagerAll::getConditionedFormula(
-    std::vector<Lit> &units) {
+ProblemManager *
+ProblemManagerAll::getConditionedFormula(std::vector<Lit> &units) {
   ProblemManagerAll *ret = createFromProblemWithNoClauses(this);
 
   std::vector<lbool> value(m_nbVar + 1, l_Undef);
   for (auto l : units) {
     value[l.var()] = l.sign() ? l_False : l_True;
-    ret->m_clauses.push_back(
-        std::make_unique<CNFClause>(std::vector<Lit>{l}));
+    ret->m_clauses.push_back(std::make_unique<CNFClause>(std::vector<Lit>{l}));
   }
 
   for (const auto &clause : m_clauses) {
-    /*TODO Mohammad: alternatives need to be kept in the problem even after they are satisfied. 
-     Or we return satisfied only if we set exactly one literal to true and all other to false
-     Already done that but is that the correct approach?
+    /*TODO Mohammad: alternatives need to be kept in the problem even after they
+     are satisfied. Or we return satisfied only if we set exactly one literal to
+     true and all other to false Already done that but is that the correct
+     approach?
      */
     if (!clause->isSatisfied(value))
       ret->m_clauses.push_back(clause->clone());

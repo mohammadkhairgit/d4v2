@@ -26,24 +26,29 @@
 namespace d4 {
 
 /**
-   Mixed problem manager for CNF clauses and exact-one alternative clauses. (With the capability to extend to other clause types in the future.)
-   The problem is stored in this class but never manipulated. But it allow the creation of a new problem manager given an assignment.
+   Mixed problem manager for CNF clauses and exact-one alternative clauses.
+   (With the capability to extend to other clause types in the future.) The
+   problem is stored in this class but never manipulated. But it allow the
+   creation of a new problem manager given an assignment.
  */
 class ProblemManagerAll : public ProblemManager {
-	//TODO Mohammad: should we add vector of vectors that contains indices of clauses for each kind of clause, so that we can easily access them.
+  // TODO Mohammad: should we add vector of vectors that contains indices of
+  // clauses for each kind of clause, so that we can easily access them.
 protected:
   std::vector<std::unique_ptr<ClauseType>> m_clauses;
   std::vector<std::unique_ptr<ClauseType>> m_learnt;
 
   /**
-     Build a variable remapping that moves selected/projected variables to the front.
+     Build a variable remapping that moves selected/projected variables to the
+     front.
 
       \return the remapped variable indices.
   */
   std::vector<Var> buildRemap() const;
 
   /**
-     Convert raw literal clauses to clause objects.
+     Convert raw literal clauses to clause objects and add them to the problem
+     manager.
 
       @param[in] rawClauses the raw literal clauses to be cloned.
       @param[in] kind the enum kind of clauses to be created.
@@ -51,15 +56,15 @@ protected:
   void appendClauses(const std::vector<std::vector<Lit>> &rawClauses,
                      ClauseKind kind);
 
-   /**
-       Clone every clause object from a source container into a destination
-       container.
+  /**
+      Clone every clause object from a source container into a destination
+      container.
 
-         @param[in] clauses the source clause container.
-         @param[out] target the destination clause container.
-   */
-   void cloneClauses(const std::vector<std::unique_ptr<ClauseType>> &clauses,
-                              std::vector<std::unique_ptr<ClauseType>> &target);
+        @param[in] clauses the source clause container.
+        @param[out] target the destination clause container.
+  */
+  void cloneClauses(const std::vector<std::unique_ptr<ClauseType>> &clauses,
+                    std::vector<std::unique_ptr<ClauseType>> &target);
 
   /**
      Remap every clause object in a clause container.
@@ -73,28 +78,32 @@ protected:
 public:
   ProblemManagerAll();
   /**
-     Construct a problem manager from a DIMACS file and an alternative clause file.
+     Construct a problem manager from a DIMACS file and an alternative clause
+     file.
 
       @param[in] nameFile the DIMACS file name.
       @param[in] alternativeFile the alternative clause file name.
   */
   ProblemManagerAll(std::string &nameFile, std::string &alternativeFile);
 
-   /**
-      Construct a mixed problem manager from an existing problem description.
+  /**
+     Construct a mixed problem manager from an existing problem description.
 
-      If the source is already a mixed problem manager, its clause containers are
-      deep-copied as well. Otherwise, the new mixed problem manager will have empty clause containers.
-   */
+     If the source is already a mixed problem manager, its clause containers are
+     deep-copied as well. Otherwise, the new mixed problem manager will have
+     empty clause containers.
+  */
   ProblemManagerAll(ProblemManager *problem);
 
   /**
-     Construct a problem manager from an existing problem manager. 
-     But the clauses are not cloned, so the new problem manager will have empty clauses.
+     Construct a problem manager from an existing problem manager.
+     But the clauses are not cloned, so the new problem manager will have empty
+     clauses.
 
       @param[in] problem the problem manager to be copied.
   */
-  static ProblemManagerAll* createFromProblemWithNoClauses(ProblemManager *problem);
+  static ProblemManagerAll *
+  createFromProblemWithNoClauses(ProblemManager *problem);
 
   /**
      Construct a problem manager that copies the passed variable metadata.
@@ -111,20 +120,21 @@ public:
   ~ProblemManagerAll() override = default;
 
   /**
-	 Normalize the problem by moving selected variables to the front.
-  */
+   * Normalize the problem by moving selected variables to the front.
+   */
   void normalize() override;
   /**
-	 Normalize the contents of each clause object by sorting the literals inside each clause.
+         Normalize the contents of each clause object by sorting the literals
+     inside each clause.
   */
   void normalizeInner() override;
-   /**
-	 	Display the mixed problem in a DIMACS-like text form.
-   */
+  /**
+               Display the mixed problem in a DIMACS-like text form.
+  */
   void display(std::ostream &out) override;
-	/**
-   Print mixed-problem statistics, including the two clause kinds.
- 	*/
+  /**
+Print mixed-problem statistics, including the two clause kinds.
+  */
   void displayStat(std::ostream &out, std::string startLine) override;
   ProblemManager *getUnsatProblem() override;
   ProblemManager *getConditionedFormula(std::vector<Lit> &units) override;

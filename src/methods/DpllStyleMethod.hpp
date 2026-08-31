@@ -348,7 +348,8 @@ private:
 
      @param[in] setOfVar, the current set of considered variables
      @param[in] unitsLit, the set of unit literal detected at this level
-     @param[in] freeVariable, the variables which become free. Do not appear in the current formula, because all their clauses are already true.
+     @param[in] freeVariable, the variables which become free. Do not appear in
+     the current formula, because all their clauses are already true.
      @param[in] out, the stream we use to print out information.
 
      \return an element of type U that sums up the given CNF sub-formula using a
@@ -381,7 +382,8 @@ private:
 
         TmpEntry<U> cb = cacheActivated ? m_cache->searchInCache(connected)
                                         : NULL_CACHE_ENTRY;
-        /** TODO: does the cache work correctly even after the alternative changes? */
+        /** TODO: does the cache work correctly even after the alternative
+         * changes? */
         if (cacheActivated)
           nbTestCacheVarSize[connected.size()]++;
         if (cacheActivated && cb.defined) {
@@ -429,7 +431,8 @@ private:
   } // setCurrentPriority
 
   /**
-     Should Return true if a not yet satisfied alternative clause exist in the current connected component, otherwise return false.
+     Should Return true if a not yet satisfied alternative clause exist in the
+     current connected component, otherwise return false.
 
      @param[in] connected the current connected component.
      @param[out] clause the literals of the selected alternative clause.
@@ -462,7 +465,8 @@ private:
         break;
     }
 
-    if (!hasPriority && AlternativeOrVariableBranch(connected, alternativeClause)) {
+    if (!hasPriority &&
+        AlternativeOrVariableBranch(connected, alternativeClause)) {
       m_nbDecisionNode++;
 
       std::vector<DataBranch<U>> branches;
@@ -477,8 +481,9 @@ private:
           branches.push_back(DataBranch<U>());
           branches.back().d = m_operation->manageBottom();
           */
-         continue;
-        // This else should theoretically always get reached at least once per for loop. Meaning branches will always have at least one element.
+          continue;
+        // This else should theoretically always get reached at least once per
+        // for loop. Meaning branches will always have at least one element.
         else {
           m_solver->pushAssumption(l);
           branches.push_back(DataBranch<U>());

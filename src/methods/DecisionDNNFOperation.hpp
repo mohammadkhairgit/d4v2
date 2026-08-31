@@ -92,7 +92,8 @@ public:
   */
   U manageNonBinaryDeterministOr(DataBranch<U> *elts, unsigned size) {
     if (size == 1)
-    /** TODO: Mohammad, is this correct? what happen if we only have one Bottom Node? */
+      /** TODO: Mohammad, is this correct? what happen if we only have one
+       * Bottom Node? */
       return manageBranch(elts[0]);
     return m_nodeManager->makeDeterministicOrNode(elts, size);
   } // manageNonBinaryDeterministOr

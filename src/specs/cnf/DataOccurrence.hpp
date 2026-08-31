@@ -26,7 +26,8 @@ struct IteratorIdxClause {
   unsigned size() { return end - start; }
 };
 
-// Bin mean Binary not the english word "bin" (as in "container"). A binary clause is a clause with exactly two literals.
+// Bin mean Binary not the english word "bin" (as in "container"). A binary
+// clause is a clause with exactly two literals.
 struct DataOccurrence {
   int *bin;
   unsigned nbBin;

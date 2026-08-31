@@ -22,8 +22,8 @@
 #include <typeinfo>
 #include <unordered_set>
 
-#include "src/problem/ProblemManager.hpp"
 #include "src/exceptions/FactoryException.hpp"
+#include "src/problem/ProblemManager.hpp"
 
 namespace d4 {
 
@@ -38,7 +38,8 @@ SpecManagerAll::SpecManagerAll(ProblemManager &p) {
   } catch (std::bad_cast &bc) {
     std::cerr << "bad_cast caught: " << bc.what() << '\n';
     std::cerr << "A mixed formula was expected\n";
-    throw(FactoryException("A mixed ProblemManager was expected", __FILE__, __LINE__));
+    throw(FactoryException("A mixed ProblemManager was expected", __FILE__,
+                           __LINE__));
   }
 
   m_maxSizeClause = 0;
@@ -694,7 +695,7 @@ void SpecManagerAll::getCurrentClausesNotBin(std::vector<unsigned> &idxClauses,
 } // getCurrentClausesNotBin
 
 void SpecManagerAll::getCurrentClausesBin(std::vector<unsigned> &idxClauses,
-                                         std::vector<Var> &component) {
+                                          std::vector<Var> &component) {
   idxClauses.resize(0);
   for (auto &v : component)
     m_inCurrentComponent[v] = true;

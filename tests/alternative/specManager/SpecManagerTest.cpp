@@ -817,7 +817,6 @@ TEST_F(ConnectedFormulaSpecManagerFixture,
       << "Expected 0 binary clause for literal -6 after preUpdate.";
 }
 
-
 TEST_F(ConnectedFormulaSpecManagerFixture,
        PrePostUpdatesPureAndConnectedComponents) {
   // Correct initialization
@@ -829,7 +828,8 @@ TEST_F(ConnectedFormulaSpecManagerFixture,
   std::vector<d4::Lit> pureLits;
 
   // PreUpdate
-  assignedLits = {d4::Lit::makeLitFalse(1), d4::Lit::makeLitTrue(4), d4::Lit::makeLitFalse(5)};
+  assignedLits = {d4::Lit::makeLitFalse(1), d4::Lit::makeLitTrue(4),
+                  d4::Lit::makeLitFalse(5)};
   specManager->preUpdate(assignedLits, pureLits);
   // Connected Components
 

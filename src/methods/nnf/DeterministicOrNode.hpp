@@ -33,17 +33,17 @@ public:
   U size;
   Branch<T, U> branches[0];
   /* The explicit data of each branch is saved in data,
-     where the end of the data of a branch i and added one position to it is the beginning of the data of the branch i+1.
-     Because The array start with position 0 it is enough to do
-     pos += p->branches[i].nbUnits + p->branches[i].nbFree;
-     to get position of next branch data.
+     where the end of the data of a branch i and added one position to it is the
+     beginning of the data of the branch i+1. Because The array start with
+     position 0 it is enough to do pos += p->branches[i].nbUnits +
+     p->branches[i].nbFree; to get position of next branch data.
   */
   U data[0];
 
   DeterministicOrNode() = delete;
   /**
    * Init the branches using elts and its size.
-   * 
+   *
    * @param[in] elts the branches we want to combine under the node.
    * @param[in] size the number of branches.
    */
@@ -67,10 +67,12 @@ public:
   }
 
   /**
-   * Deallocate the memory used by the node and recursively deallocate its children.
+   * Deallocate the memory used by the node and recursively deallocate its
+   * children.
    *
    * @param[in] node the node to deallocate, is equivalent to this.
-   * @param[in] func the functions vector containing the deallocate function for each node type.?
+   * @param[in] func the functions vector containing the deallocate function for
+   * each node type.?
    * @param[in] globalStamp the stamp number.
    */
   static void deallocate(Node<T> *node, void (**func)(), unsigned globalStamp) {
@@ -89,12 +91,15 @@ public:
 
   /**
    * Ask for the number of models of the formula.
-   * 
-   * @param[in] node the node to compute the number of models, is equivalent to this.
-   * @param[in] func the functions vector containing the computeNbModels function for each node type.
+   *
+   * @param[in] node the node to compute the number of models, is equivalent to
+   * this.
+   * @param[in] func the functions vector containing the computeNbModels
+   * function for each node type.
    * @param[in] fixedValue the assignment we consider.
-   * @param[in] problem the problem we are solving (use to get information about weight).
-   * @param[in] globalStamp the stamp number. 
+   * @param[in] problem the problem we are solving (use to get information about
+   * weight).
+   * @param[in] globalStamp the stamp number.
    */
   static T computeNbModels(Node<T> *node, T (**func)(),
                            std::vector<ValueVar> &fixedValue,
@@ -106,9 +111,8 @@ public:
     p->nbModels = T(0);
     unsigned pos = 0;
     for (unsigned i = 0; i < p->size; i++) {
-      p->nbModels += p->branches[i].computeNbModels(func, &p->data[pos],
-                                                    fixedValue, problem,
-                                                    globalStamp);
+      p->nbModels += p->branches[i].computeNbModels(
+          func, &p->data[pos], fixedValue, problem, globalStamp);
       pos += p->branches[i].nbUnits + p->branches[i].nbFree;
     }
 
@@ -118,9 +122,11 @@ public:
 
   /**
    * Ask if the formula is satisfiable under an interpretation (fixedValue).
-   * 
-   * @param[in] node the node to compute the number of models, is equivalent to this.
-   * @param[in] func the functions vector containing the isSAT functions for each node type.
+   *
+   * @param[in] node the node to compute the number of models, is equivalent to
+   * this.
+   * @param[in] func the functions vector containing the isSAT functions for
+   * each node type.
    * @param[in] fixedValue the assignment we consider.
    * @param[in] globalStamp the stamp number.
    */
@@ -132,8 +138,8 @@ public:
 
     unsigned pos = 0;
     for (unsigned i = 0; i < p->size; i++) {
-      p->nbModels = p->branches[i].isSAT(func, &p->data[pos], fixedValue,
-                                         globalStamp);
+      p->nbModels =
+          p->branches[i].isSAT(func, &p->data[pos], fixedValue, globalStamp);
       if (p->nbModels == 1) {
         node->header.stamp = globalStamp;
         return true;
@@ -147,9 +153,10 @@ public:
 
   /**
    * Print the NNF representation of the node and its children.
-   * 
+   *
    * @param[in] node the node to print, is equivalent to this.
-   * @param[in] func the functions vector containing the printNNF functions for each node type.
+   * @param[in] func the functions vector containing the printNNF functions for
+   * each node type.
    * @param[in] out the stream where we print out the formula.
    * @param[in] idx the index of the node.
    * @param[in] globalStamp the stamp number.
