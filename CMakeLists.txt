@@ -13,6 +13,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # FIXME: libmtkahypar currently can not be built statically (https://github.com/kahypar/mt-kahypar/pull/161)
 option(BUILD_SHARED_LIBS "Build shared libraries." ON)
+option(D4_BUILD_TESTS "Build and register test targets" OFF)
 
 if(NOT BUILD_SHARED_LIBS)
     set(GMP_USE_STATIC_LIBS ON)
@@ -164,5 +165,36 @@ if(USE_GLUCOSE)
 endif()
 add_executable(d4 src/Main.cpp)
 target_link_libraries(d4 core Boost::program_options)
+
+enable_testing()
+if(D4_BUILD_TESTS)
+    find_package(GTest REQUIRED)
+
+    add_executable(ParserDimacsTestCNF tests/alternative/parser/ParserDimacsTestCNF.cpp)
+    target_link_libraries(ParserDimacsTestCNF PRIVATE core GTest::gtest_main)
+    add_test(NAME ParserDimacsTestCNF COMMAND ParserDimacsTestCNF)
+    set_tests_properties(ParserDimacsTestCNF PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+    
+    add_executable(ParserDimacsTestAlternative tests/alternative/parser/ParserDimacsTestAlternative.cpp)
+    target_link_libraries(ParserDimacsTestAlternative PRIVATE core GTest::gtest_main)
+    add_test(NAME ParserDimacsTestAlternative COMMAND ParserDimacsTestAlternative)
+    set_tests_properties(ParserDimacsTestAlternative PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+    add_executable(ProblemManagerTest tests/alternative/problemManager/ProblemManagerTest.cpp)
+    target_link_libraries(ProblemManagerTest PRIVATE core GTest::gtest_main)
+    add_test(NAME ProblemManagerTest COMMAND ProblemManagerTest)
+    set_tests_properties(ProblemManagerTest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+    add_executable(ClauseTypeTest tests/alternative/problemManager/ClauseTypeTest.cpp)
+    target_link_libraries(ClauseTypeTest PRIVATE core GTest::gtest_main)
+    add_test(NAME ClauseTypeTest COMMAND ClauseTypeTest)
+    set_tests_properties(ClauseTypeTest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+    add_executable(SpecManagerTest tests/alternative/specManager/SpecManagerTest.cpp)
+    target_link_libraries(SpecManagerTest PRIVATE core GTest::gtest_main)
+    add_test(NAME SpecManagerTest COMMAND SpecManagerTest)
+    set_tests_properties(SpecManagerTest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+endif()
 
 install(TARGETS d4)
