@@ -135,6 +135,9 @@ public:
     if ((m_isProjectedMode = m_problem->getNbSelectedVar())) {
       m_out << "c [MODE] projected\n";
       m_hCutSet = PartitioningHeuristic::makePartitioningHeuristicNone(m_out);
+    } else if (!config.alternative_input.empty()) {
+      m_out << "c [MODE] alternative case will use no partitioning\n";
+      m_hCutSet = PartitioningHeuristic::makePartitioningHeuristicNone(m_out);
     } else {
       m_out << "c [MODE] classic\n";
       m_hCutSet = PartitioningHeuristic::makePartitioningHeuristic(
@@ -357,6 +360,7 @@ private:
   */
   U compute_(std::vector<Var> &setOfVar, std::vector<Lit> &unitsLit,
              std::vector<Var> &freeVariable, std::ostream &out) {
+    
     showRun(out);
     m_nbCallCall++;
 
@@ -474,22 +478,15 @@ private:
       for (unsigned i = 0; i < alternativeClause.size(); i++) {
         Lit l = alternativeClause[i];
         // Only create a branch if needed.
-        if (m_solver->isInAssumption(l))
+        if (m_solver->varIsAssigned(l.var())) {
           continue;
-        else if (m_solver->isInAssumption(~l))
-          /**
-          branches.push_back(DataBranch<U>());
-          branches.back().d = m_operation->manageBottom();
-          */
-          continue;
-        // This else should theoretically always get reached at least once per
-        // for loop. Meaning branches will always have at least one element.
-        else {
+        } else {
           m_solver->pushAssumption(l);
           branches.push_back(DataBranch<U>());
           branches.back().d = compute_(connected, branches.back().unitLits,
                                        branches.back().freeVars, out);
           m_solver->popAssumption();
+          
         }
       }
 

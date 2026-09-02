@@ -57,6 +57,28 @@ BucketInConstruction::BucketInConstruction(SpecManagerCnf &occM) {
 } // constructor
 
 /**
+   Constructor.
+
+   @param[in] occM the spec manager.
+*/
+BucketInConstruction::BucketInConstruction(SpecManagerAll &occM) {
+  nbClauseInDistrib = 0;
+  sizeDistrib = 0;
+  capacityDistrib = 3 * occM.getSumSizeClauses() + occM.getNbVariable();
+  maxSizeClause = occM.getMaxSizeClause();
+
+  shiftedIndexClause = new unsigned[occM.getNbClause()];
+  distrib = new unsigned[capacityDistrib];
+  markedAsRedundant = new bool[occM.getNbClause()];
+  sizeClauses = new unsigned[occM.getNbClause()];
+  shiftedSizeClause = new unsigned[occM.getNbClause()];
+  distribDiffSize = new unsigned[occM.getMaxSizeClause() + 1];
+
+  for (unsigned i = 0; i < occM.getNbClause(); i++)
+    markedAsRedundant[i] = false;
+} // constructor
+
+/**
    Destructor.
 */
 BucketInConstruction::~BucketInConstruction() {

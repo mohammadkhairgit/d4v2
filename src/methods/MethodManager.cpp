@@ -189,15 +189,25 @@ ProblemManager *MethodManager::runPreproc(Config &config,
                                           ProblemManager *initProblem,
                                           std::ostream &out,
                                           LastBreathPreproc &lastBreath) {
-  PreprocManager *preproc = PreprocManager::makePreprocManager(config, out);
-  assert(preproc);
-  ProblemManager *problem = preproc->run(initProblem, lastBreath);
-  out << "c [MAIN PREPROCESSED INPUT] \033[4m\033[32mStatistics about the "
-         "preprocessed formula\033[0m\n";
-  problem->displayStat(out, "c [PREPROCESSED INPUT] ");
-  out << "c\n";
-  assert(problem);
-  delete preproc; // the preproc won't be used.
+  ProblemManager *problem;
+  if (config.alternative_input.empty()) {
+    PreprocManager *preproc = PreprocManager::makePreprocManager(config, out);
+    assert(preproc);
+    ProblemManager *problem = preproc->run(initProblem, lastBreath);
+    out << "c [MAIN PREPROCESSED INPUT] \033[4m\033[32mStatistics about the "
+           "preprocessed formula\033[0m\n";
+    problem->displayStat(out, "c [PREPROCESSED INPUT] ");
+    out << "c\n";
+    assert(problem);
+    delete preproc; // the preproc won't be used.
+    return problem;
+  } else {
+    lastBreath.panic = false;
+    lastBreath.countConflict.resize(initProblem->getNbVar() + 1, 0);
+    lastBreath.learnt.clear();
+
+    return new ProblemManagerAll(initProblem);
+  }
 
   return problem;
 } // runPreproc

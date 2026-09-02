@@ -31,14 +31,14 @@ public:
 
   T nbModels;
   U size;
-  Branch<T, U> branches[0];
+  Branch<T, U> *branches;
   /* The explicit data of each branch is saved in data,
      where the end of the data of a branch i and added one position to it is the
      beginning of the data of the branch i+1. Because The array start with
      position 0 it is enough to do pos += p->branches[i].nbUnits +
      p->branches[i].nbFree; to get position of next branch data.
   */
-  U data[0];
+  U *data;
 
   DeterministicOrNode() = delete;
   /**
@@ -52,6 +52,11 @@ public:
     header.stamp = 0;
     size = _size;
     nbModels = T(0);
+
+    char *base = reinterpret_cast<char *>(this);
+    branches = reinterpret_cast<Branch<T, U> *>(base + sizeof(*this));
+    data = reinterpret_cast<U *>(reinterpret_cast<char *>(branches) +
+                                 size * sizeof(Branch<T, U>));
 
     unsigned pos = 0;
     for (unsigned i = 0; i < size; i++) {

@@ -26,6 +26,7 @@
 
 #include "BucketAllocator.hpp"
 #include "CachedBucket.hpp"
+#include "cnf/BucketManagerAllCl.hpp"
 #include "cnf/BucketManagerCnf.hpp"
 #include "cnf/BucketManagerCnfCl.hpp"
 #include "cnf/BucketManagerCnfCombi.hpp"
@@ -67,33 +68,50 @@ public:
       mode = NB;
     if (config.cache_store_strategy == "not-touched")
       mode = NT;
-
-    SpecManagerCnf &scnf = dynamic_cast<SpecManagerCnf &>(s);
-    if (config.cache_clause_representation == "clause")
-      return new BucketManagerCnfCl<T>(scnf, cache, mode,
-                                       config.cache_size_first_page,
-                                       config.cache_size_additional_page);
-    if (config.cache_clause_representation == "sym")
-      return new BucketManagerCnfSym<T>(scnf, cache, mode,
-                                        config.cache_size_first_page,
-                                        config.cache_size_additional_page);
-    if (config.cache_clause_representation == "index")
-      return new BucketManagerCnfIndex<T>(scnf, cache, mode,
+    try {
+      SpecManagerCnf &scnf = dynamic_cast<SpecManagerCnf &>(s);
+      if (config.cache_clause_representation == "clause")
+        return new BucketManagerCnfCl<T>(scnf, cache, mode,
+                                         config.cache_size_first_page,
+                                         config.cache_size_additional_page);
+      if (config.cache_clause_representation == "sym")
+        return new BucketManagerCnfSym<T>(scnf, cache, mode,
                                           config.cache_size_first_page,
                                           config.cache_size_additional_page);
-    if (config.cache_clause_representation == "combi") {
-      out << "c [CONSTRUCTOR] Cache bucket manager mixed strategy:"
-          << " limit #var sym("
-          << config.cache_clause_representation_combi_limitVar_sym << ") "
-          << " limit #var index ("
-          << config.cache_clause_representation_combi_limitVar_index << ") "
-          << "\n";
+      if (config.cache_clause_representation == "index")
+        return new BucketManagerCnfIndex<T>(scnf, cache, mode,
+                                            config.cache_size_first_page,
+                                            config.cache_size_additional_page);
+      if (config.cache_clause_representation == "combi") {
+        out << "c [CONSTRUCTOR] Cache bucket manager mixed strategy:"
+            << " limit #var sym("
+            << config.cache_clause_representation_combi_limitVar_sym << ") "
+            << " limit #var index ("
+            << config.cache_clause_representation_combi_limitVar_index << ") "
+            << "\n";
 
-      return new BucketManagerCnfCombi<T>(
-          scnf, cache, mode, config.cache_size_first_page,
-          config.cache_size_additional_page,
-          config.cache_clause_representation_combi_limitVar_sym,
-          config.cache_clause_representation_combi_limitVar_index);
+        return new BucketManagerCnfCombi<T>(
+            scnf, cache, mode, config.cache_size_first_page,
+            config.cache_size_additional_page,
+            config.cache_clause_representation_combi_limitVar_sym,
+            config.cache_clause_representation_combi_limitVar_index);
+      }
+    } catch (std::bad_cast &bc) {
+      std::cerr << "c [ERROR] Cannot create a BucketManagerCnf, the "
+                   "SpecManager is not a SpecManagerCnf."
+                << "\n";
+    }
+
+    try {
+      SpecManagerAll &sall = dynamic_cast<SpecManagerAll &>(s);
+      if (config.cache_clause_representation == "clause")
+        return new BucketManagerAllCl<T>(sall, cache, mode,
+                                         config.cache_size_first_page,
+                                         config.cache_size_additional_page);
+    } catch (std::bad_cast &bc) {
+      std::cerr << "c [ERROR] Cannot create a BucketManagerAll, the "
+                   "SpecManager is not a SpecManagerAll."
+                << "\n";
     }
 
     throw(

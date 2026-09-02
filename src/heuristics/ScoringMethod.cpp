@@ -20,6 +20,7 @@
 #include "cnf/ScoringMethodDlcs.hpp"
 #include "cnf/ScoringMethodJwts.hpp"
 #include "cnf/ScoringMethodMom.hpp"
+#include "cnf/ScoringMethodMomAll.hpp"
 #include "cnf/ScoringMethodVsads.hpp"
 #include "cnf/ScoringMethodVsids.hpp"
 #include "src/exceptions/FactoryException.hpp"
@@ -41,7 +42,8 @@ ScoringMethod *ScoringMethod::makeScoringMethod(Config &config, SpecManager &p,
   std::string meth = config.scoring_method;
   out << "c [CONSTRUCTOR] Variable heuristic: " << meth << "\n";
 
-  if (inType == "cnf" || inType == "dimacs") {
+  if ((inType == "cnf" || inType == "dimacs") &&
+      config.alternative_input.empty()) {
     try {
       SpecManagerCnf &ps = dynamic_cast<SpecManagerCnf &>(p);
       if (meth == "mom")
@@ -58,6 +60,19 @@ ScoringMethod *ScoringMethod::makeScoringMethod(Config &config, SpecManager &p,
     } catch (std::bad_cast &bc) {
       std::cerr << "bad_cast caught: " << bc.what() << '\n';
       std::cerr << "A CNF formula was expeted\n";
+    }
+  } else if ((inType == "cnf" || inType == "dimacs") &&
+             !config.alternative_input.empty()) {
+    try {
+      SpecManagerAll &ps = dynamic_cast<SpecManagerAll &>(p);
+      if (meth == "mom")
+        return new ScoringMethodMomAll(ps);
+      std::cerr << "Mixed formula does not support the specified scoring method"
+                << std::endl;
+      return NULL;
+    } catch (std::bad_cast &bc) {
+      std::cerr << "bad_cast caught: " << bc.what() << '\n';
+      std::cerr << "A mixed formula was expeted\n";
     }
   }
 

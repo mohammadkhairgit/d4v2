@@ -16,28 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-#include "src/specs/cnf/SpecManagerAll.hpp"
-#include "src/specs/cnf/SpecManagerCnf.hpp"
+#include <src/specs/cnf/SpecManagerAll.hpp>
+
+#include "../ScoringMethod.hpp"
 
 namespace d4 {
-class BucketInConstruction {
+class ScoringMethodMomAll : public ScoringMethod {
+private:
+  SpecManagerAll &om;
+
 public:
-  unsigned *distrib;
-  unsigned *shiftedIndexClause;
-  unsigned *shiftedSizeClause;
-  unsigned *sizeClauses;
-  unsigned *distribDiffSize;
-  bool *markedAsRedundant;
-
-  unsigned nbClauseInDistrib;
-  unsigned sizeDistrib;
-  unsigned capacityDistrib;
-  unsigned maxSizeClause;
-
-  BucketInConstruction();
-  BucketInConstruction(SpecManagerCnf &occM);
-  BucketInConstruction(SpecManagerAll &occM);
-  ~BucketInConstruction();
-  void reinit();
+  ScoringMethodMomAll(SpecManagerAll &om);
+  double computeScore(Var v);
 };
 } // namespace d4

@@ -24,6 +24,7 @@
 #include "DataOccurrence.hpp"
 #include "src/problem/cnf/ClauseType.hpp"
 #include "src/problem/cnf/ProblemManagerAll.hpp"
+#include "src/utils/Enum.hpp"
 
 namespace d4 {
 
@@ -165,6 +166,30 @@ public:
   bool litIsAssignedToTrue(Lit l) override;
   bool varIsAssigned(Var v) override;
   int getNbOccurrence(Lit l) override;
+
+  inline IteratorIdxClause getVecIdxClauseBin(Lit l) {
+    assert(l.intern() < m_occurrence.size());
+    return m_occurrence[l.intern()].getBinClauses();
+  }
+
+  inline IteratorIdxClause getVecIdxClauseNotBin(Lit l) {
+    assert(l.intern() < m_occurrence.size());
+    return m_occurrence[l.intern()].getNotBinClauses();
+  }
+
+  inline IteratorIdxClause getVecIdxClause(Lit l) {
+    assert(l.intern() < m_occurrence.size());
+    return m_occurrence[l.intern()].getClauses();
+  }
+
+  inline IteratorIdxClause getVecIdxClause(Lit l, ModeStore mode) {
+    assert(l.intern() < m_occurrence.size());
+    if (mode == NT)
+      return m_occurrence[l.intern()].getNotBinClauses();
+    if (mode == ALL)
+      return m_occurrence[l.intern()].getClauses();
+    return m_occurrence[l.intern()].getBinClauses();
+  }
 
   /**
      Mixed spec managers use the dynamic update flow and do not support the
@@ -342,6 +367,18 @@ public:
   inline unsigned getNbClause(Lit l) {
     return m_occurrence[l.intern()].nbBin + m_occurrence[l.intern()].nbNotBin;
   }
+
+  /**
+   * TODO: The usage of thisin Bucket is not tested yet.
+   */
+  inline int clauseAssignmentCount(int idx) {
+    return m_clauses[idx]->getNbUnsatLit() + m_clauses[idx]->getNbSatLit();
+  }
+
+  /**
+   * TODO: not tested yet.
+   */
+  inline ClauseType *getClause(int idx) { return m_clauses[idx].get(); }
 
   /**
      Return the clause satisfaction status under the current assignment.
