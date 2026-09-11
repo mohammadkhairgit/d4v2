@@ -96,6 +96,19 @@ ProblemManagerAll::ProblemManagerAll(std::string &nameFile,
   appendClauses(cnfClauses, ClauseKind::Cnf);
   appendClauses(altClauses, ClauseKind::Alternative);
   normalize();
+  // possibly not great way to construct the clauses in two steps but here the
+  // number of non projected variable is set for each clause
+  for (auto &clause : m_clauses) {
+    unsigned int nonProjectedCount = 0;
+    if (m_selected.size() != 0) {
+      for (auto &lit : clause->getLiterals()) {
+        if (lit.var() > m_selected.size())
+          nonProjectedCount++;
+      }
+    }
+    clause->setNbNonProjectedVars(nonProjectedCount);
+  }
+
 } // constructor
 
 /** TODO: This constructor can only be used with a ProblemManagerAll object.**/

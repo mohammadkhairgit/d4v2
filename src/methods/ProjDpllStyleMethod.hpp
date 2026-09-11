@@ -85,6 +85,11 @@ private:
           new DecisionDNNFOperation<T, U>(m_problem, m_specs, m_solver);
     }
     if constexpr (std::is_same_v<O, PersistentNodesOperation<T>>) {
+      if (!config.alternative_input.empty()) {
+        throw(FactoryException("alternative input is not supported with "
+                               "persistent nodes operation",
+                               __FILE__, __LINE__));
+      }
       m_operation = new PersistentNodesOperation<T>(m_problem, config.output);
     }
     if constexpr (std::is_same_v<O, CountingOperation<T>>) {
@@ -175,7 +180,8 @@ public:
         double(m_specs->nbSelected()) / double(m_specs->getNbVariable());
     double clause_var_ratio = double(m_specs->nbSelected()) /
                               ((SpecManagerCnf *)m_specs)->getNbClause();
-    if (projected_ratio < 0.10 | clause_var_ratio > 0.5) {
+    if (projected_ratio < 0.10 | clause_var_ratio > 0.5 |
+        !config.alternative_input.empty()) {
       m_hCutSet = PartitioningHeuristic::makePartitioningHeuristicNone(m_out);
     } else {
       m_hCutSet = PartitioningHeuristic::makePartitioningHeuristic(
@@ -529,6 +535,22 @@ private:
   } // setCurrentPriority
 
   /**
+     Should Return true if a not yet satisfied alternative clause that is still
+     relevent exist in the current connected component, otherwise return false.
+     With relevance we mean that it contain decidable variables still.
+
+     @param[in] connected the current connected component.
+     @param[out] clause the literals of the selected alternative clause.
+
+     \return true if a not yet satisfied alternative clause was found.
+  */
+  inline bool AlternativeOrVariableBranch(std::vector<Var> &connected,
+                                          std::vector<Lit> &clause) {
+    clause.clear();
+    return m_specs->getAlternativeBranch(connected, clause);
+  } // AlternativeOrVariableBranch
+
+  /**
      This function select a variable and compile a decision node.
 
      @param[in] connected, the set of variable present in the current problem.
@@ -538,6 +560,7 @@ private:
   */
   U computeDecisionNode(ProjVars &connected, std::ostream &out) {
     std::vector<Var> cutSet;
+    std::vector<Lit> alternativeClause;
     bool hasPriority = false, hasVariable = false;
     for (auto v : connected.vars) {
       if (m_specs->varIsAssigned(v) || !m_specs->isSelected(v))
@@ -546,6 +569,50 @@ private:
       if ((hasPriority = m_currentPrioritySet[v]))
         break;
     }
+
+    if (!hasPriority &&
+        AlternativeOrVariableBranch(connected.vars, alternativeClause)) {
+      m_nbDecisionNode++;
+
+      std::vector<DataBranch<U>> branches;
+      branches.reserve(alternativeClause.size());
+      std::vector<Lit> undecidableLiterals = {};
+      std::vector<Lit> decidableLiterals = {};
+      for (unsigned i = 0; i < alternativeClause.size(); i++) {
+        Lit l = alternativeClause[i];
+        // Only create a branch if needed.
+        if (!m_specs->isSelected(l.var())) {
+          undecidableLiterals.push_back(l);
+          continue;
+        }
+        decidableLiterals.push_back(l);
+        if (m_solver->varIsAssigned(l.var())) {
+          continue;
+        }
+        m_solver->pushAssumption(l);
+        branches.push_back(DataBranch<U>());
+        branches.back().d = compute_(connected, branches.back().unitLits,
+                                     branches.back().freeVars, out);
+        m_solver->popAssumption();
+      }
+      // case we have undecidable literals, supposedly all can be covered in one
+      // branch.
+      if (!undecidableLiterals.empty()) {
+        for (unsigned j = 0; j < decidableLiterals.size(); j++) {
+          m_solver->pushAssumption(decidableLiterals[j].neg());
+        }
+        branches.push_back(DataBranch<U>());
+        branches.back().d = compute_(connected, branches.back().unitLits,
+                                     branches.back().freeVars, out);
+        for (unsigned j = 0; j < decidableLiterals.size(); j++) {
+          m_solver->popAssumption();
+        }
+      }
+
+      return m_operation->manageNonBinaryDeterministOr(branches.data(),
+                                                       branches.size());
+    }
+
     bool cut_valid = false;
 
     if (hasVariable && !hasPriority && m_hCutSet->isReady(connected.vars)) {

@@ -40,18 +40,36 @@ enum class ClauseKind { Cnf, Alternative };
  */
 class ClauseType {
 protected:
+  /**
+   * TODO: add an unsigned int variable for non projected count of variable in
+   * this clause and a function that return if the clause have any more
+   * selectable variables. Not related to here but in SpecManagerAll if we add a
+   * list of sorted not yet satisfied clauses, then we need to update them in
+   * per/postupdate. But considering the first solution here I might wait
+   * because maybe I can create scoring classes instead of arrays of clauses
+   * that are sorted.
+   * TODO: add functions that return how many positive
+   * , negative assignments need be set still until fulfillment then update
+   * SpecManager
+   */
   // the literals stored in the clause.
   std::vector<Lit> m_literals;
   // the number of satisfied literals in the clause.
   unsigned m_nbSatLit;
   // the number of unsatisfied literals in the clause.
   unsigned m_nbUnsatLit;
+  // the number of non-projected variables in the clause. This variable is not
+  // set in the constructor
+  unsigned m_nbNonProjectedVars;
+  // the number of decided non-projected variables in the clause. (decided pure
+  // literals)
+  unsigned m_nbDecidedNonProjectedVars;
   // the clause watcher literal.
   Lit m_watcher;
 
   explicit ClauseType(std::vector<Lit> literals)
       : m_literals(std::move(literals)), m_nbSatLit(0), m_nbUnsatLit(0),
-        m_watcher(lit_Undef) {}
+        m_nbDecidedNonProjectedVars(0), m_watcher(lit_Undef) {}
 
 public:
   virtual ~ClauseType() = default;
@@ -98,6 +116,23 @@ public:
      \return true if the clause is satisfied, false otherwise.
  */
   virtual bool isSatisfied() const = 0;
+
+  /**
+   * \return if the clause has any remaining undecided projected variables.
+   */
+  bool hasRemainingProjectedVars() const {
+    return m_nbSatLit + m_nbUnsatLit + m_nbNonProjectedVars -
+               m_nbDecidedNonProjectedVars <
+           m_literals.size();
+  }
+
+  /**
+   * \return if the class still need to be satisfied and it have any remaining
+   * undecided projected variables.
+   */
+  bool isStillRelevant() const {
+    return !this->isSatisfied() && hasRemainingProjectedVars();
+  }
 
   /**
      \return the stored literals.
@@ -171,6 +206,26 @@ public:
      Decrease the number of unsatisfied literals tracked for this clause.
   */
   inline void decNbUnsatLit() { --m_nbUnsatLit; }
+
+  /**
+     Increase the number of decided non-projected variables in the clause.
+   */
+  inline void incNbDecidedNonProjectedVars() { ++m_nbDecidedNonProjectedVars; }
+
+  /**
+     Decrease the number of decided non-projected variables in the clause.
+   */
+  inline void decNbDecidedNonProjectedVars() { --m_nbDecidedNonProjectedVars; }
+
+  /**
+     Set the number of non-projected variables in the clause.
+   */
+  inline void setNbNonProjectedVars(unsigned nb) { m_nbNonProjectedVars = nb; }
+
+  /**
+     \return the number of non-projected variables in the clause.
+   */
+  inline unsigned getNbNonProjectedVars() const { return m_nbNonProjectedVars; }
 };
 
 /**

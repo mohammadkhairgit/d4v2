@@ -60,6 +60,9 @@ protected:
   // Indices of clauses that are not binary clauses. Index for the attribute
   // m_clauses.
   std::vector<int> m_clausesNotBinary;
+  // Number of occurrences of each variable in non-CNF clauses. Index start from
+  // 1 to m_nbVar. Index 0 is not used.
+  std::vector<unsigned> m_varCurrentOccurrenceInNonCnfClause;
   // The size of the largest clause in the mixed formula.
   unsigned m_maxSizeClause;
   // current partial assignment
@@ -150,7 +153,8 @@ public:
    * watchers if conditions are met.
    *
    * @param[in] lits the new assignments
-   * @param[out] pure the pure literals
+   * @param[out] pure the pure literals that are not selectable. (do not belong
+   * to the projected variables set)
    */
   void preUpdate(std::vector<Lit> &lits, std::vector<Lit> &pure) override;
 
@@ -201,6 +205,23 @@ public:
   }
 
   void showFormula(std::ostream &out) override;
+  inline void printAllAsCNF(std::ostream &out) {
+    out << "p cnf " << getNbVariable() << " " << getNbClause() << "\n";
+    out << "clauses as CNF:\n";
+    unsigned int currentNumberOfVar = this->m_nbVar;
+    std::vector<std::vector<Lit>> cnfClauses;
+    std::vector<Var> createdVars;
+    for (auto &clause : m_clauses) {
+      clause->populate_as_cnf_clause(cnfClauses, createdVars,
+                                     currentNumberOfVar);
+    }
+    for (auto &c : cnfClauses) {
+      for (auto &l : c) {
+        out << l << " ";
+      }
+      out << "0\n";
+    }
+  }
   void showCurrentFormula(std::ostream &out) override;
   void showTrail(std::ostream &out) override;
   int getNbVariable() override { return m_nbVar; }

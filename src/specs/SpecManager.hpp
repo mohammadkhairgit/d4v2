@@ -64,8 +64,10 @@ public:
   virtual int getNbVariable() = 0;
 
   /**
-     Pass an unsatisfied alternative clause and return true if it exist,
-     otherwise return false.
+     Pass an unsatisfied alternative clause and return true if a not yet
+     satisfied alternative clause that is still relevent exist in the current
+     connected component, otherwise return false. With relevance we mean that it
+     contain decidable variables still.
 
      @param[in] component the current connected component.
      @param[out] clause the literals of the selected alternative clause.
