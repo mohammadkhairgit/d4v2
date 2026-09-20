@@ -15,6 +15,7 @@ Config Config::default_values() {
   config.maxsharpsat_option_greedy_init = false;
   config.projddnnf_pure_lit_elim = true;
   config.scoring_method = "vsads";
+  config.clause_scoring = "none";
   config.scoring_method_decay_freq = 300000;
   config.occurrence_manager = "dynamic";
   config.phase_heuristic = "polarity";

@@ -18,6 +18,7 @@ public:
   bool maxsharpsat_option_greedy_init;
   bool projddnnf_pure_lit_elim;
   string scoring_method;
+  string clause_scoring;
   unsigned scoring_method_decay_freq;
   string occurrence_manager;
   string phase_heuristic;

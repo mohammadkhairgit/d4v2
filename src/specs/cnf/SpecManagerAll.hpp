@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cassert>
+#include <list>
 #include <memory>
 
 #include "../SpecManager.hpp"
@@ -55,8 +56,12 @@ class SpecManagerAll : public SpecManager {
   */
 private:
 protected:
-  // The stored clauses of different ClauseTypes.
+  // The stored clauses of different ClauseTypes. 
+  //(note literals are only stored in their positive form, meaning in case 
+  // of alternative a literal is negative form is not related to the alternative clause)
   std::vector<std::unique_ptr<ClauseType>> m_clauses;
+  // Live clause indices grouped by clause kind.
+  std::vector<std::list<unsigned>> m_clausesByType;
   // Indices of clauses that are not binary clauses. Index for the attribute
   // m_clauses.
   std::vector<int> m_clausesNotBinary;
@@ -79,7 +84,6 @@ protected:
   std::vector<DataOccurrence> m_occurrence;
   // The memory for the clauses occurrence data.
   int *m_dataOccurrenceMemory;
-
   // Temporary attributes
 
   // Temporary data for the connected component discovery following the
@@ -104,7 +108,37 @@ protected:
     m_mustUnMark.resize(0);
   }
 
+  inline std::size_t clauseKindIdx(unsigned idxCl) const {
+    return static_cast<std::size_t>(m_clauses[idxCl]->kind());
+  }
+
+  inline void removeClauseIndexFromType(unsigned idxCl) {
+    m_clausesByType[clauseKindIdx(idxCl)].remove(idxCl);
+  }
+
+  inline void addClauseIndexToType(unsigned idxCl) {
+    m_clausesByType[clauseKindIdx(idxCl)].push_back(idxCl);
+  }
+
 public:
+  inline void getCurrentClausesByKind(std::vector<unsigned> &idxClauses,
+                                      std::vector<Var> &component,
+                                      ClauseKind kind) {
+    idxClauses.resize(0);
+    for (auto &v : component)
+      m_inCurrentComponent[v] = true;
+
+    auto kindIdx = static_cast<std::size_t>(kind);
+    assert(kindIdx < m_clausesByType.size());
+    for (auto idx : m_clausesByType[kindIdx]) {
+      if (isNotSatisfiedClauseAndInComponent((int)idx, m_inCurrentComponent))
+        idxClauses.push_back(idx);
+    }
+
+    for (auto &v : component)
+      m_inCurrentComponent[v] = false;
+  }
+
   /**
      Build a mixed spec manager from the current mixed problem. Throw an error
      if the problem is not a mixed problem.
@@ -193,6 +227,10 @@ public:
     if (mode == ALL)
       return m_occurrence[l.intern()].getClauses();
     return m_occurrence[l.intern()].getBinClauses();
+  }
+
+  inline const ClauseType &getClause(unsigned idx) const {
+    return *m_clauses[idx];
   }
 
   /**
@@ -390,7 +428,7 @@ public:
   }
 
   /**
-   * TODO: The usage of thisin Bucket is not tested yet.
+   * TODO: The usage of this in Bucket is not tested yet.
    */
   inline int clauseAssignmentCount(int idx) {
     return m_clauses[idx]->getNbUnsatLit() + m_clauses[idx]->getNbSatLit();
@@ -399,7 +437,7 @@ public:
   /**
    * TODO: not tested yet.
    */
-  inline ClauseType *getClause(int idx) { return m_clauses[idx].get(); }
+  inline const ClauseType *getClause(int idx) const { return m_clauses[idx].get(); }
 
   /**
      Return the clause satisfaction status under the current assignment.

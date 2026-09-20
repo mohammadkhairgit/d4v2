@@ -36,6 +36,7 @@
 #include "src/heuristics/PhaseHeuristic.hpp"
 #include "src/heuristics/ProjBackupHeuristic.hpp"
 #include "src/heuristics/ScoringMethod.hpp"
+#include "src/heuristics/ClauseScoringMethod.hpp"
 #include "src/preprocs/PreprocManager.hpp"
 #include "src/problem/ProblemManager.hpp"
 #include "src/problem/ProblemTypes.hpp"
@@ -75,6 +76,7 @@ private:
   unsigned m_callPartitioner;
   unsigned m_nbDecisionNode;
   unsigned m_optCached;
+  bool clauseScoringEnabled;
   unsigned m_stampIdx;
   unsigned m_decay_frequency;
   bool m_isProjectedMode;
@@ -107,6 +109,7 @@ private:
   SpecManager *m_specs;
   ScoringMethod *m_hVar;
   PhaseHeuristic *m_hPhase;
+  ClauseScoringMethod *m_hClause;
   PartitioningHeuristic *m_hCutSet;
 
   TmpEntry<U> NULL_CACHE_ENTRY;
@@ -160,7 +163,16 @@ public:
         ScoringMethod::makeScoringMethod(config, *m_specs, *m_solver, m_out);
     m_hPhase =
         PhaseHeuristic::makePhaseHeuristic(config, *m_specs, *m_solver, m_out);
-
+    if (config.alternative_input.empty())
+      clauseScoringEnabled = false;
+    else
+      clauseScoringEnabled = true;
+    if (clauseScoringEnabled) {
+      m_hClause = ClauseScoringMethod::makeClauseScoringMethod(config, *m_specs, *m_hVar, m_out);
+    } else {
+      m_hClause = nullptr;
+    }
+    
     m_isProjectedMode = true;
 
     // select the partitioner regarding if it projected model counting or not.
@@ -219,6 +231,8 @@ public:
     delete m_hPhase;
     delete m_hCutSet;
     delete m_cache;
+    if (clauseScoringEnabled)
+      delete m_hClause;
   } // destructor
 
 private:
@@ -547,7 +561,7 @@ private:
   inline bool AlternativeOrVariableBranch(std::vector<Var> &connected,
                                           std::vector<Lit> &clause) {
     clause.clear();
-    return m_specs->getAlternativeBranch(connected, clause);
+    return m_hClause->selectClause(connected, clause);
   } // AlternativeOrVariableBranch
 
   /**
@@ -571,6 +585,7 @@ private:
     }
 
     if (!hasPriority &&
+        clauseScoringEnabled &&
         AlternativeOrVariableBranch(connected.vars, alternativeClause)) {
       m_nbDecisionNode++;
 
@@ -585,10 +600,10 @@ private:
           undecidableLiterals.push_back(l);
           continue;
         }
-        decidableLiterals.push_back(l);
         if (m_solver->varIsAssigned(l.var())) {
           continue;
         }
+        decidableLiterals.push_back(l);
         m_solver->pushAssumption(l);
         branches.push_back(DataBranch<U>());
         branches.back().d = compute_(connected, branches.back().unitLits,

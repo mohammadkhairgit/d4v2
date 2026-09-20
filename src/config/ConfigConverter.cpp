@@ -28,6 +28,7 @@ ConfigConverter::fromVariablesMap(boost::program_options::variables_map &vm) {
       vm["maxsharpsat-option-greedy-init"].as<bool>();
   config.projddnnf_pure_lit_elim = vm["projddnnf-pure-lit-elim"].as<bool>();
   config.scoring_method = vm["scoring-method"].as<string>();
+  config.clause_scoring = vm["clause-scoring"].as<string>();
   config.scoring_method_decay_freq =
       vm["scoring-method-decay-freq"].as<unsigned>();
   config.occurrence_manager = vm["occurrence-manager"].as<string>();

@@ -16,6 +16,7 @@
 ("preproc-ve-limit",boost::program_options::value<int>()->default_value(4), "ve occurrence limit")
 ("projddnnf-pure-lit-elim",boost::program_options::value<bool>()->default_value(true), "pure lit elim")
 ("scoring-method,sm",boost::program_options::value<std::string>()->default_value("vsads"),"The scoring method used for selecting the next variable. [mom, dlcs, vsids, vsads, jwts]")
+("clause-scoring,cs",boost::program_options::value<std::string>()->default_value("none"),"The scoring method used for selecting the next clause. [literal-sum, literal-sum-over-branch-avg, literal-min, branch-min, literal-max, branch-max, branches-avg-divided-by-distribution, none]")
 ("scoring-method-decay-freq",boost::program_options::value<unsigned>()->default_value(300000),"decay ferquency")
 ("occurrence-manager,om",boost::program_options::value<std::string>()->default_value("dynamic"),"The occurrence manager used. [add a description]")
 ("phase-heuristic,ph",boost::program_options::value<std::string>()->default_value("polarity"),"The way the phase of the next decision is selected (false, true, polarity or occurrence).")

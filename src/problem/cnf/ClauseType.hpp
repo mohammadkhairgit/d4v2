@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include <cassert>
 #include <algorithm>
 #include <cstddef>
 #include <memory>
@@ -111,19 +112,20 @@ public:
   virtual bool isSatisfied(const std::vector<lbool> &currentValue) const = 0;
 
   /**
-    Test whether the clause is satisfied by the passed partial assignment.
+    Test whether the clause is satisfied passed on nbSatLit and nbUnsatLit.
 
-     \return true if the clause is satisfied, false otherwise.
+    \return true if the clause is (surely) satisfied, false otherwise.
  */
   virtual bool isSatisfied() const = 0;
 
   /**
-   * \return if the clause has any remaining undecided projected variables.
+   * \return number of remaining undecided projected variables in the clause.
    */
-  bool hasRemainingProjectedVars() const {
-    return m_nbSatLit + m_nbUnsatLit + m_nbNonProjectedVars -
-               m_nbDecidedNonProjectedVars <
-           m_literals.size();
+  unsigned hasRemainingProjectedVars() const {
+    auto used = m_nbSatLit + m_nbUnsatLit + m_nbNonProjectedVars -
+                m_nbDecidedNonProjectedVars;
+    assert(used <= m_literals.size());
+    return static_cast<unsigned>(m_literals.size() - used);
   }
 
   /**

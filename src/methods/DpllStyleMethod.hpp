@@ -31,6 +31,7 @@
 #include "src/heuristics/PartitioningHeuristic.hpp"
 #include "src/heuristics/PhaseHeuristic.hpp"
 #include "src/heuristics/ScoringMethod.hpp"
+#include "src/heuristics/ClauseScoringMethod.hpp"
 #include "src/preprocs/PreprocManager.hpp"
 #include "src/problem/ProblemManager.hpp"
 #include "src/problem/ProblemTypes.hpp"
@@ -62,6 +63,7 @@ private:
   unsigned m_callPartitioner;
   unsigned m_nbDecisionNode;
   unsigned m_optCached;
+  bool clauseScoringEnabled;
   unsigned m_stampIdx;
   bool m_isProjectedMode;
 
@@ -78,6 +80,7 @@ private:
   WrapperSolver *m_solver;
   SpecManager *m_specs;
   ScoringMethod *m_hVar;
+  ClauseScoringMethod *m_hClause;
   PhaseHeuristic *m_hPhase;
   PartitioningHeuristic *m_hCutSet;
   TmpEntry<U> NULL_CACHE_ENTRY;
@@ -122,7 +125,16 @@ public:
         ScoringMethod::makeScoringMethod(config, *m_specs, *m_solver, m_out);
     m_hPhase =
         PhaseHeuristic::makePhaseHeuristic(config, *m_specs, *m_solver, m_out);
-
+    if (config.alternative_input.empty())
+      clauseScoringEnabled = false;
+    else
+      clauseScoringEnabled = true;
+    if (clauseScoringEnabled) {
+      m_hClause = ClauseScoringMethod::makeClauseScoringMethod(config, *m_specs, *m_hVar, m_out);
+    } else {
+      m_hClause = nullptr;
+    }
+    
     // specify which variables are decisions, and which are not.
     m_isDecisionVariable.clear();
     m_isDecisionVariable.resize(m_problem->getNbVar() + 1,
@@ -177,6 +189,8 @@ public:
     delete m_hPhase;
     delete m_hCutSet;
     delete m_cache;
+    if (clauseScoringEnabled)
+      delete m_hClause;
   } // destructor
 
 private:
@@ -360,7 +374,7 @@ private:
   */
   U compute_(std::vector<Var> &setOfVar, std::vector<Lit> &unitsLit,
              std::vector<Var> &freeVariable, std::ostream &out) {
-    
+
     showRun(out);
     m_nbCallCall++;
 
@@ -372,6 +386,7 @@ private:
 
     // compute the connected component
     std::vector<std::vector<Var>> varConnected;
+    // This step remove variables that are already assigned from the components
     int nbComponent = m_specs->computeConnectedComponent(varConnected, setOfVar,
                                                          freeVariable);
     expelNoDecisionVar(freeVariable, m_isDecisionVariable);
@@ -435,8 +450,9 @@ private:
   } // setCurrentPriority
 
   /**
-     Should Return true if a not yet satisfied alternative clause exist in the
-     current connected component, otherwise return false.
+     Should Return true if a not yet satisfied alternative clause that is still
+     relevent exist in the current connected component, otherwise return false.
+     With relevance we mean that it contain decidable variables still.
 
      @param[in] connected the current connected component.
      @param[out] clause the literals of the selected alternative clause.
@@ -446,7 +462,7 @@ private:
   inline bool AlternativeOrVariableBranch(std::vector<Var> &connected,
                                           std::vector<Lit> &clause) {
     clause.clear();
-    return m_specs->getAlternativeBranch(connected, clause);
+    return m_hClause->selectClause(connected, clause);
   } // AlternativeOrVariableBranch
 
   /**
@@ -469,7 +485,7 @@ private:
         break;
     }
 
-    if (!hasPriority &&
+    if (!hasPriority && clauseScoringEnabled &&
         AlternativeOrVariableBranch(connected, alternativeClause)) {
       m_nbDecisionNode++;
 
@@ -478,7 +494,8 @@ private:
       for (unsigned i = 0; i < alternativeClause.size(); i++) {
         Lit l = alternativeClause[i];
         // Only create a branch if needed.
-        if (m_solver->varIsAssigned(l.var())) {
+        if (m_solver->varIsAssigned(l.var()) ||
+            !m_isDecisionVariable[l.var()]) {
           continue;
         } else {
           m_solver->pushAssumption(l);
@@ -486,10 +503,8 @@ private:
           branches.back().d = compute_(connected, branches.back().unitLits,
                                        branches.back().freeVars, out);
           m_solver->popAssumption();
-          
         }
       }
-
       return m_operation->manageNonBinaryDeterministOr(branches.data(),
                                                        branches.size());
     }
@@ -596,7 +611,6 @@ public:
       setOfVar.push_back(i);
 
     U result = compute(setOfVar, m_out);
-    printFinalStats(m_out);
     m_operation->manageResult(result, config, m_out);
   } // run
 

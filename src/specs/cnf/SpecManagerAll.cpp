@@ -48,6 +48,8 @@ SpecManagerAll::SpecManagerAll(ProblemManager &p) {
     m_varCurrentOccurrenceInNonCnfClause.resize(m_nbVar + 1, 0);
   }
 
+  m_clausesByType.resize(2);
+
   m_maxSizeClause = 0;
   unsigned count = 0;
   // Temporary store the occurrence for each literal, contain the indices of
@@ -55,6 +57,7 @@ SpecManagerAll::SpecManagerAll(ProblemManager &p) {
   std::vector<std::vector<int>> occurrence((m_nbVar + 1) << 1);
   // store the not binary clauses indices.
   for (unsigned i = 0; i < m_clauses.size(); i++) {
+    addClauseIndexToType(i);
     if (m_clauses[i]->size() > 2)
       m_clausesNotBinary.push_back(i);
 
@@ -358,12 +361,13 @@ void SpecManagerAll::preUpdate(std::vector<Lit> &lits) {
       int idxCl = m_occurrence[l.intern()].notBin[i];
       auto &clause = *m_clauses[idxCl];
       clause.incNbSatLit();
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.incNbDecidedNonProjectedVars();
       if (clause.getWatcher() == l && !clause.isSatisfied())
         m_reviewWatcher.push_back(idxCl);
       if (!clause.isSatisfied())
         continue;
+      removeClauseIndexFromType(idxCl);
       for (auto &ll : clause.getLiterals())
         if (m_currentAssignment[ll.var()] == l_Undef)
           m_occurrence[ll.intern()].removeNotBin(idxCl);
@@ -375,12 +379,13 @@ void SpecManagerAll::preUpdate(std::vector<Lit> &lits) {
       int idxCl = m_occurrence[(~l).intern()].notBin[i];
       auto &clause = *m_clauses[idxCl];
       clause.incNbUnsatLit();
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.incNbDecidedNonProjectedVars();
       if (clause.getWatcher() == ~l && !clause.isSatisfied())
         m_reviewWatcher.push_back(idxCl);
       if (!clause.isSatisfied())
         continue;
+      removeClauseIndexFromType(idxCl);
       for (auto &ll : clause.getLiterals())
         if (m_currentAssignment[ll.var()] == l_Undef)
           m_occurrence[ll.intern()].removeNotBin(idxCl);
@@ -393,12 +398,13 @@ void SpecManagerAll::preUpdate(std::vector<Lit> &lits) {
       int idxCl = m_occurrence[l.intern()].bin[i];
       auto &clause = *m_clauses[idxCl];
       clause.incNbSatLit();
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.incNbDecidedNonProjectedVars();
       if (clause.getWatcher() == l && !clause.isSatisfied())
         m_reviewWatcher.push_back(idxCl);
       if (!clause.isSatisfied())
         continue;
+      removeClauseIndexFromType(idxCl);
       for (auto &ll : clause.getLiterals())
         if (m_currentAssignment[ll.var()] == l_Undef)
           m_occurrence[ll.intern()].removeBin(idxCl);
@@ -411,12 +417,13 @@ void SpecManagerAll::preUpdate(std::vector<Lit> &lits) {
       int idxCl = m_occurrence[(~l).intern()].bin[i];
       auto &clause = *m_clauses[idxCl];
       clause.incNbUnsatLit();
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.incNbDecidedNonProjectedVars();
       if (clause.getWatcher() == ~l && !clause.isSatisfied())
         m_reviewWatcher.push_back(idxCl);
       if (!clause.isSatisfied())
         continue;
+      removeClauseIndexFromType(idxCl);
       for (auto &ll : clause.getLiterals())
         if (m_currentAssignment[ll.var()] == l_Undef)
           m_occurrence[ll.intern()].removeBin(idxCl);
@@ -454,12 +461,13 @@ void SpecManagerAll::preUpdate(std::vector<Lit> &lits, std::vector<Lit> &pure) {
       int idxCl = m_occurrence[l.intern()].notBin[i];
       auto &clause = *m_clauses[idxCl];
       clause.incNbSatLit();
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.incNbDecidedNonProjectedVars();
       if (clause.getWatcher() == l && !clause.isSatisfied())
         m_reviewWatcher.push_back(idxCl);
       if (!clause.isSatisfied())
         continue;
+      removeClauseIndexFromType(idxCl);
       for (auto &ll : clause.getLiterals()) {
         if (m_currentAssignment[ll.var()] == l_Undef) {
           m_occurrence[ll.intern()].removeNotBin(idxCl);
@@ -482,12 +490,13 @@ void SpecManagerAll::preUpdate(std::vector<Lit> &lits, std::vector<Lit> &pure) {
       int idxCl = m_occurrence[(~l).intern()].notBin[i];
       auto &clause = *m_clauses[idxCl];
       clause.incNbUnsatLit();
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.incNbDecidedNonProjectedVars();
       if (clause.getWatcher() == ~l && !clause.isSatisfied())
         m_reviewWatcher.push_back(idxCl);
       if (!clause.isSatisfied())
         continue;
+      removeClauseIndexFromType(idxCl);
       for (auto &ll : clause.getLiterals()) {
         if (m_currentAssignment[ll.var()] == l_Undef) {
           m_occurrence[ll.intern()].removeNotBin(idxCl);
@@ -511,12 +520,13 @@ void SpecManagerAll::preUpdate(std::vector<Lit> &lits, std::vector<Lit> &pure) {
       int idxCl = m_occurrence[l.intern()].bin[i];
       auto &clause = *m_clauses[idxCl];
       clause.incNbSatLit();
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.incNbDecidedNonProjectedVars();
       if (clause.getWatcher() == l && !clause.isSatisfied())
         m_reviewWatcher.push_back(idxCl);
       if (!clause.isSatisfied())
         continue;
+      removeClauseIndexFromType(idxCl);
       for (auto &ll : clause.getLiterals()) {
         if (m_currentAssignment[ll.var()] == l_Undef) {
           m_occurrence[ll.intern()].removeBin(idxCl);
@@ -540,12 +550,13 @@ void SpecManagerAll::preUpdate(std::vector<Lit> &lits, std::vector<Lit> &pure) {
       int idxCl = m_occurrence[(~l).intern()].bin[i];
       auto &clause = *m_clauses[idxCl];
       clause.incNbUnsatLit();
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.incNbDecidedNonProjectedVars();
       if (clause.getWatcher() == ~l && !clause.isSatisfied())
         m_reviewWatcher.push_back(idxCl);
       if (!clause.isSatisfied())
         continue;
+      removeClauseIndexFromType(idxCl);
       for (auto &ll : clause.getLiterals()) {
         if (m_currentAssignment[ll.var()] == l_Undef) {
           m_occurrence[ll.intern()].removeBin(idxCl);
@@ -584,13 +595,14 @@ void SpecManagerAll::postUpdate(std::vector<Lit> &lits) {
     for (unsigned i = 0; i < m_occurrence[l.intern()].nbNotBin; i++) {
       int idxCl = m_occurrence[l.intern()].notBin[i];
       auto &clause = *m_clauses[idxCl];
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.decNbDecidedNonProjectedVars();
       if (!clause.isSatisfied()) {
         clause.decNbSatLit();
         continue;
       }
       clause.decNbSatLit();
+      addClauseIndexToType(idxCl);
 
       for (auto &ll : clause.getLiterals())
         if (m_currentAssignment[ll.var()] == l_Undef)
@@ -600,13 +612,14 @@ void SpecManagerAll::postUpdate(std::vector<Lit> &lits) {
     for (unsigned i = 0; i < m_occurrence[(~l).intern()].nbNotBin; i++) {
       int idxCl = m_occurrence[(~l).intern()].notBin[i];
       auto &clause = *m_clauses[idxCl];
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.decNbDecidedNonProjectedVars();
       if (!clause.isSatisfied()) {
         clause.decNbUnsatLit();
         continue;
       }
       clause.decNbUnsatLit();
+      addClauseIndexToType(idxCl);
 
       for (auto &ll : clause.getLiterals())
         if (m_currentAssignment[ll.var()] == l_Undef)
@@ -616,13 +629,14 @@ void SpecManagerAll::postUpdate(std::vector<Lit> &lits) {
     for (unsigned i = 0; i < m_occurrence[l.intern()].nbBin; i++) {
       int idxCl = m_occurrence[l.intern()].bin[i];
       auto &clause = *m_clauses[idxCl];
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.decNbDecidedNonProjectedVars();
       if (!clause.isSatisfied()) {
         clause.decNbSatLit();
         continue;
       }
       clause.decNbSatLit();
+      addClauseIndexToType(idxCl);
 
       for (auto &ll : clause.getLiterals())
         if (m_currentAssignment[ll.var()] == l_Undef)
@@ -632,13 +646,14 @@ void SpecManagerAll::postUpdate(std::vector<Lit> &lits) {
     for (unsigned i = 0; i < m_occurrence[(~l).intern()].nbBin; i++) {
       int idxCl = m_occurrence[(~l).intern()].bin[i];
       auto &clause = *m_clauses[idxCl];
-      if (!isSelected(l.var()))
+      if (nbSelected() && isProj() && !isSelected(l.var()))
         clause.decNbDecidedNonProjectedVars();
       if (!clause.isSatisfied()) {
         clause.decNbUnsatLit();
         continue;
       }
       clause.decNbUnsatLit();
+      addClauseIndexToType(idxCl);
       // should Never occur? (If it should never then use assert)
       for (auto &ll : clause.getLiterals())
         if (m_currentAssignment[ll.var()] == l_Undef)
@@ -756,11 +771,8 @@ void SpecManagerAll::getCurrentClausesBin(std::vector<unsigned> &idxClauses,
 bool SpecManagerAll::getAlternativeBranch(std::vector<Var> &component,
                                           std::vector<Lit> &clause) {
   std::vector<unsigned> idxClauses;
-  getCurrentClauses(idxClauses, component);
+  getCurrentClausesByKind(idxClauses, component, ClauseKind::Alternative);
   for (auto idx : idxClauses) {
-    if (m_clauses[idx]->kind() != ClauseKind::Alternative ||
-        !(m_clauses[idx]->isStillRelevant()))
-      continue;
     clause = m_clauses[idx]->getLiterals();
     return true;
   }
