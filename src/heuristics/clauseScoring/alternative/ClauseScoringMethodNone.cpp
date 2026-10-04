@@ -7,8 +7,8 @@ double ClauseScoringMethodNone::computeScore(const ClauseType &clause) {
   return -1;
 }
 
-double ClauseScoringMethodNone::getBestScoreClause(
-    std::vector<Var> &connected, std::vector<Lit> &clause) {
+double ClauseScoringMethodNone::getBestScoreClause(std::vector<Var> &connected,
+                                                   std::vector<Lit> &clause) {
   (void)connected;
   (void)clause;
   return -1;

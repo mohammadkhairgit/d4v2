@@ -56,9 +56,10 @@ class SpecManagerAll : public SpecManager {
   */
 private:
 protected:
-  // The stored clauses of different ClauseTypes. 
-  //(note literals are only stored in their positive form, meaning in case 
-  // of alternative a literal is negative form is not related to the alternative clause)
+  // The stored clauses of different ClauseTypes.
+  //(note literals are only stored in their positive form, meaning in case
+  // of alternative a literal is negative form is not related to the alternative
+  // clause)
   std::vector<std::unique_ptr<ClauseType>> m_clauses;
   // Live clause indices grouped by clause kind.
   std::vector<std::list<unsigned>> m_clausesByType;
@@ -437,7 +438,9 @@ public:
   /**
    * TODO: not tested yet.
    */
-  inline const ClauseType *getClause(int idx) const { return m_clauses[idx].get(); }
+  inline const ClauseType *getClause(int idx) const {
+    return m_clauses[idx].get();
+  }
 
   /**
      Return the clause satisfaction status under the current assignment.
