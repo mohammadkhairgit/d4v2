@@ -76,6 +76,12 @@ private:
   unsigned m_callPartitioner;
   unsigned m_nbDecisionNode;
   unsigned m_optCached;
+  unsigned m_nbNonBinaryDeterministOr;
+  unsigned m_longestNonBinaryDeterministOrSequence;
+  unsigned m_shortestNonBinaryDeterministOrSequence;
+  unsigned m_nbNonBinaryDeterministOrSequences;
+  unsigned m_currentNonBinaryDeterministOrSequence;
+  bool m_lastNodeWasNonBinaryDeterministOr;
   bool clauseScoringEnabled;
   unsigned m_stampIdx;
   unsigned m_decay_frequency;
@@ -210,6 +216,12 @@ public:
     m_optCached = config.cache_activated;
     m_callPartitioner = 0;
     m_nbDecisionNode = m_nbSplit = m_nbCallCall = 0;
+    m_nbNonBinaryDeterministOr = 0;
+    m_longestNonBinaryDeterministOrSequence = 0;
+    m_shortestNonBinaryDeterministOrSequence = 0;
+    m_nbNonBinaryDeterministOrSequences = 0;
+    m_currentNonBinaryDeterministOrSequence = 0;
+    m_lastNodeWasNonBinaryDeterministOr = true;
     m_stampIdx = 0;
     m_stampVar.resize(m_specs->getNbVariable() + 1, 0);
     createOperation(config);
@@ -376,6 +388,14 @@ private:
     out << "c Number of paritioner calls: " << m_callPartitioner << "\n";
     out << "c Number of bad cuts " << m_failed_cuts << "\n";
     out << "c Number of pure lits  " << m_nb_pure_lits << "\n";
+    out << "c Number of non-binary deterministic OR nodes: "
+        << m_nbNonBinaryDeterministOr << "\n";
+    out << "c Longest non-binary deterministic OR sequence: "
+        << m_longestNonBinaryDeterministOrSequence << "\n";
+    out << "c Shortest non-binary deterministic OR sequence: "
+        << m_shortestNonBinaryDeterministOrSequence << "\n";
+    out << "c Number of non-binary deterministic OR sequences: "
+        << m_nbNonBinaryDeterministOrSequences << "\n";
 
     out << "c\n";
     m_cache->printCacheInformation(out);
@@ -386,6 +406,17 @@ private:
     out << "c Final time: " << getTimer() << "\n";
     out << "c\n";
   } // printFinalStat
+
+  inline void finishNonBinaryDeterministOrSequence() {
+    if (m_currentNonBinaryDeterministOrSequence > 0 &&
+        (m_shortestNonBinaryDeterministOrSequence == 0 ||
+         m_currentNonBinaryDeterministOrSequence <
+             m_shortestNonBinaryDeterministOrSequence))
+      m_shortestNonBinaryDeterministOrSequence =
+          m_currentNonBinaryDeterministOrSequence;
+    m_lastNodeWasNonBinaryDeterministOr = false;
+    m_currentNonBinaryDeterministOrSequence = 0;
+  } // finishNonBinaryDeterministOrSequence
 
   /**
      Initialize the assumption in order to compute compiled formula under this
@@ -434,7 +465,7 @@ private:
     m_nbCallCall++;
 
     if (!m_solver->solve(setOfVar.vars)) {
-
+      finishNonBinaryDeterministOrSequence();
       return m_operation->manageBottom();
     }
 
@@ -485,8 +516,14 @@ private:
     if (nbComponent) {
       U tab[nbComponent];
       m_nbSplit += (nbComponent > 1) ? nbComponent : 0;
+      unsigned parentSequenceLength = m_currentNonBinaryDeterministOrSequence;
+      bool parentLastNodeWasNonBinaryDeterministOr =
+          m_lastNodeWasNonBinaryDeterministOr;
       max_depth += 1;
       for (int cp = 0; cp < nbComponent; cp++) {
+        m_currentNonBinaryDeterministOrSequence = parentSequenceLength;
+        m_lastNodeWasNonBinaryDeterministOr =
+            parentLastNodeWasNonBinaryDeterministOr;
         ProjVars &connected = varConnected[cp];
         bool cacheActivated = cacheIsActivated(connected.vars);
 
@@ -522,7 +559,7 @@ private:
 
     m_specs->postUpdate(unitsLit);
     expelNoDecisionLit(unitsLit);
-
+    finishNonBinaryDeterministOrSequence();
     return m_operation->createTop();
   } // compute_
 
@@ -587,6 +624,21 @@ private:
     if (!hasPriority &&
         clauseScoringEnabled &&
         AlternativeOrVariableBranch(connected.vars, alternativeClause)) {
+      unsigned parentSequenceLength = m_currentNonBinaryDeterministOrSequence;
+      m_nbNonBinaryDeterministOr++;
+      if (m_lastNodeWasNonBinaryDeterministOr) {
+        m_currentNonBinaryDeterministOrSequence++;
+      } else {
+        m_currentNonBinaryDeterministOrSequence = 1;
+        m_nbNonBinaryDeterministOrSequences++;
+      }
+      if (m_currentNonBinaryDeterministOrSequence >
+          m_longestNonBinaryDeterministOrSequence)
+        m_longestNonBinaryDeterministOrSequence =
+            m_currentNonBinaryDeterministOrSequence;
+      m_lastNodeWasNonBinaryDeterministOr = true;
+
+
       m_nbDecisionNode++;
 
       std::vector<DataBranch<U>> branches;
@@ -609,6 +661,8 @@ private:
         branches.back().d = compute_(connected, branches.back().unitLits,
                                      branches.back().freeVars, out);
         m_solver->popAssumption();
+        m_currentNonBinaryDeterministOrSequence = parentSequenceLength + 1;
+        m_lastNodeWasNonBinaryDeterministOr = true;
       }
       // case we have undecidable literals, supposedly all can be covered in one
       // branch.
@@ -621,12 +675,15 @@ private:
                                      branches.back().freeVars, out);
         for (unsigned j = 0; j < decidableLiterals.size(); j++) {
           m_solver->popAssumption();
+          m_currentNonBinaryDeterministOrSequence = parentSequenceLength + 1;
+          m_lastNodeWasNonBinaryDeterministOr = true;
         }
       }
 
       return m_operation->manageNonBinaryDeterministOr(branches.data(),
                                                        branches.size());
     }
+    finishNonBinaryDeterministOrSequence();
 
     bool cut_valid = false;
 
@@ -680,6 +737,8 @@ private:
     m_solver->pushAssumption(l);
     b[0].d = compute_(connected, b[0].unitLits, b[0].freeVars, out);
     m_solver->popAssumption();
+    m_lastNodeWasNonBinaryDeterministOr = false;
+    m_currentNonBinaryDeterministOrSequence = 0;
 
     if (m_solver->isInAssumption(l))
       b[1].d = m_operation->manageBottom();
@@ -689,6 +748,8 @@ private:
       m_solver->pushAssumption(~l);
       b[1].d = compute_(connected, b[1].unitLits, b[1].freeVars, out);
       m_solver->popAssumption();
+      m_lastNodeWasNonBinaryDeterministOr = false;
+      m_currentNonBinaryDeterministOrSequence = 0;
     }
 
     unsetCurrentPriority(cutSet);
