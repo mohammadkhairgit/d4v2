@@ -27,7 +27,6 @@ protected:
   bool skipLiteralScoring(const Lit &lit) const;
 
 public:
-    
   virtual double computeScore(const ClauseType &clause) override;
   virtual ClauseScores computeClauseScore(const ClauseType &clause) = 0;
   double getBestScoreClause(std::vector<Var> &connected,
@@ -46,7 +45,7 @@ class ClauseScoringMethodLiteralSumOverBranchAvg
     : public ClauseScoringMethodLiteralMetric {
 public:
   ClauseScoringMethodLiteralSumOverBranchAvg(SpecManagerAll &specManager,
-                                   ScoringMethod &scoringMethod)
+                                             ScoringMethod &scoringMethod)
       : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
   ClauseScores computeClauseScore(const ClauseType &clause) override;
 };
@@ -60,7 +59,7 @@ public:
 class ClauseScoringMethodBranchMin : public ClauseScoringMethodLiteralMetric {
 public:
   ClauseScoringMethodBranchMin(SpecManagerAll &specManager,
-                                ScoringMethod &scoringMethod)
+                               ScoringMethod &scoringMethod)
       : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
   ClauseScores computeClauseScore(const ClauseType &clause) override;
 };
@@ -74,16 +73,16 @@ public:
 class ClauseScoringMethodBranchMax : public ClauseScoringMethodLiteralMetric {
 public:
   ClauseScoringMethodBranchMax(SpecManagerAll &specManager,
-                                ScoringMethod &scoringMethod)
+                               ScoringMethod &scoringMethod)
       : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
   ClauseScores computeClauseScore(const ClauseType &clause) override;
 };
 class ClauseScoringMethodBranchesAvgDividedByDistribution
     : public ClauseScoringMethodLiteralMetric {
 public:
-  ClauseScoringMethodBranchesAvgDividedByDistribution(SpecManagerAll &specManager,
-                                                         ScoringMethod &scoringMethod)
+  ClauseScoringMethodBranchesAvgDividedByDistribution(
+      SpecManagerAll &specManager, ScoringMethod &scoringMethod)
       : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
   ClauseScores computeClauseScore(const ClauseType &clause) override;
 };
-}
+} // namespace d4

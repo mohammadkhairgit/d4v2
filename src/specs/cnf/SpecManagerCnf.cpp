@@ -119,7 +119,8 @@ SpecManagerCnf::~SpecManagerCnf() {
 
 /**
    Look all the formula in order to compute the connected component
-   of the formula (union find algorithm).
+   of the formula (union find algorithm). Do not include any variables that are
+   already assigned in the current assignment.
 
    @param[out] varCo, the different connected components found
    @param[in] setOfVar, the current set of variables
