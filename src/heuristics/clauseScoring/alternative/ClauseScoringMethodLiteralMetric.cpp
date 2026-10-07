@@ -128,7 +128,7 @@ ClauseScoringMethodLiteralMetric::ClauseScores ClauseScoringMethodLiteralMin::co
 
   double score = -1;
   for (std::size_t i = 1; i + 1 < literalScores.size(); i += 2)
-    score = std::min(score, std::min(literalScores[i], literalScores[i + 1]));
+    score = std::min(literalScores[i], literalScores[i + 1]);
 
   clauseScore.clauseCompareScore = score;
   clauseScore.literalCompareScore = score;

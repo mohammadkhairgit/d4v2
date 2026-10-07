@@ -28,10 +28,10 @@
 #include "src/caching/CachedBucket.hpp"
 #include "src/caching/TmpEntry.hpp"
 #include "src/config/Config.hpp"
+#include "src/heuristics/ClauseScoringMethod.hpp"
 #include "src/heuristics/PartitioningHeuristic.hpp"
 #include "src/heuristics/PhaseHeuristic.hpp"
 #include "src/heuristics/ScoringMethod.hpp"
-#include "src/heuristics/ClauseScoringMethod.hpp"
 #include "src/preprocs/PreprocManager.hpp"
 #include "src/problem/ProblemManager.hpp"
 #include "src/problem/ProblemTypes.hpp"
@@ -63,6 +63,12 @@ private:
   unsigned m_callPartitioner;
   unsigned m_nbDecisionNode;
   unsigned m_optCached;
+  unsigned m_nbNonBinaryDeterministOr;
+  unsigned m_longestNonBinaryDeterministOrSequence;
+  unsigned m_shortestNonBinaryDeterministOrSequence;
+  unsigned m_nbNonBinaryDeterministOrSequences;
+  unsigned m_currentNonBinaryDeterministOrSequence;
+  bool m_lastNodeWasNonBinaryDeterministOr;
   bool clauseScoringEnabled;
   unsigned m_stampIdx;
   bool m_isProjectedMode;
@@ -130,11 +136,12 @@ public:
     else
       clauseScoringEnabled = true;
     if (clauseScoringEnabled) {
-      m_hClause = ClauseScoringMethod::makeClauseScoringMethod(config, *m_specs, *m_hVar, m_out);
+      m_hClause = ClauseScoringMethod::makeClauseScoringMethod(config, *m_specs,
+                                                               *m_hVar, m_out);
     } else {
       m_hClause = nullptr;
     }
-    
+
     // specify which variables are decisions, and which are not.
     m_isDecisionVariable.clear();
     m_isDecisionVariable.resize(m_problem->getNbVar() + 1,
@@ -166,6 +173,12 @@ public:
     m_optCached = config.cache_activated;
     m_callPartitioner = 0;
     m_nbDecisionNode = m_nbSplit = m_nbCallCall = 0;
+    m_nbNonBinaryDeterministOr = 0;
+    m_longestNonBinaryDeterministOrSequence = 0;
+    m_shortestNonBinaryDeterministOrSequence = 0;
+    m_nbNonBinaryDeterministOrSequences = 0;
+    m_currentNonBinaryDeterministOrSequence = 0;
+    m_lastNodeWasNonBinaryDeterministOr = true;
     m_stampIdx = 0;
     m_stampVar.resize(m_specs->getNbVariable() + 1, 0);
     nbTestCacheVarSize.resize(m_specs->getNbVariable() + 1, 0);
@@ -329,6 +342,14 @@ private:
     out << "c Number of split formula: " << m_nbSplit << "\n";
     out << "c Number of decision: " << m_nbDecisionNode << "\n";
     out << "c Number of paritioner calls: " << m_callPartitioner << "\n";
+    out << "c Number of non-binary deterministic OR nodes: "
+        << m_nbNonBinaryDeterministOr << "\n";
+    out << "c Longest non-binary deterministic OR sequence: "
+        << m_longestNonBinaryDeterministOrSequence << "\n";
+    out << "c Shortest non-binary deterministic OR sequence: "
+        << m_shortestNonBinaryDeterministOrSequence << "\n";
+    out << "c Number of non-binary deterministic OR sequences: "
+        << m_nbNonBinaryDeterministOrSequences << "\n";
     out << "c\n";
     m_cache->printCacheInformation(out);
     if (m_hCutSet) {
@@ -360,6 +381,17 @@ private:
     return m_cache->isActivated(connected.size());
   } // cacheIsActivated
 
+  inline void finishNonBinaryDeterministOrSequence() {
+    if (m_currentNonBinaryDeterministOrSequence > 0 &&
+        (m_shortestNonBinaryDeterministOrSequence == 0 ||
+         m_currentNonBinaryDeterministOrSequence <
+             m_shortestNonBinaryDeterministOrSequence))
+      m_shortestNonBinaryDeterministOrSequence =
+          m_currentNonBinaryDeterministOrSequence;
+    m_lastNodeWasNonBinaryDeterministOr = false;
+    m_currentNonBinaryDeterministOrSequence = 0;
+  } // finishNonBinaryDeterministOrSequence
+
   /**
      Call the CNF formula into a FBDD.
 
@@ -378,8 +410,10 @@ private:
     showRun(out);
     m_nbCallCall++;
 
-    if (!m_solver->solve(setOfVar))
+    if (!m_solver->solve(setOfVar)) {
+      finishNonBinaryDeterministOrSequence();
       return m_operation->manageBottom();
+    }
 
     m_solver->whichAreUnits(setOfVar, unitsLit); // collect unit literals
     m_specs->preUpdate(unitsLit);
@@ -395,7 +429,13 @@ private:
     if (nbComponent) {
       U tab[nbComponent];
       m_nbSplit += (nbComponent > 1) ? nbComponent : 0;
+      unsigned parentSequenceLength = m_currentNonBinaryDeterministOrSequence;
+      bool parentLastNodeWasNonBinaryDeterministOr =
+          m_lastNodeWasNonBinaryDeterministOr;
       for (int cp = 0; cp < nbComponent; cp++) {
+        m_currentNonBinaryDeterministOrSequence = parentSequenceLength;
+        m_lastNodeWasNonBinaryDeterministOr =
+            parentLastNodeWasNonBinaryDeterministOr;
         std::vector<Var> &connected = varConnected[cp];
         bool cacheActivated = cacheIsActivated(connected);
 
@@ -424,6 +464,7 @@ private:
     m_specs->postUpdate(unitsLit);
     expelNoDecisionLit(unitsLit, m_isDecisionVariable);
 
+    finishNonBinaryDeterministOrSequence();
     return m_operation->createTop();
   } // compute_
 
@@ -487,6 +528,20 @@ private:
 
     if (!hasPriority && clauseScoringEnabled &&
         AlternativeOrVariableBranch(connected, alternativeClause)) {
+      unsigned parentSequenceLength = m_currentNonBinaryDeterministOrSequence;
+      m_nbNonBinaryDeterministOr++;
+      if (m_lastNodeWasNonBinaryDeterministOr) {
+        m_currentNonBinaryDeterministOrSequence++;
+      } else {
+        m_currentNonBinaryDeterministOrSequence = 1;
+        m_nbNonBinaryDeterministOrSequences++;
+      }
+      if (m_currentNonBinaryDeterministOrSequence >
+          m_longestNonBinaryDeterministOrSequence)
+        m_longestNonBinaryDeterministOrSequence =
+            m_currentNonBinaryDeterministOrSequence;
+      m_lastNodeWasNonBinaryDeterministOr = true;
+
       m_nbDecisionNode++;
 
       std::vector<DataBranch<U>> branches;
@@ -503,11 +558,15 @@ private:
           branches.back().d = compute_(connected, branches.back().unitLits,
                                        branches.back().freeVars, out);
           m_solver->popAssumption();
+          m_currentNonBinaryDeterministOrSequence = parentSequenceLength + 1;
+          m_lastNodeWasNonBinaryDeterministOr = true;
         }
       }
       return m_operation->manageNonBinaryDeterministOr(branches.data(),
                                                        branches.size());
     }
+
+    finishNonBinaryDeterministOrSequence();
 
     if (hasVariable && !hasPriority && m_hCutSet->isReady(connected)) {
       m_hCutSet->computeCutSet(connected, cutSet);
@@ -532,15 +591,21 @@ private:
     m_solver->pushAssumption(l);
     b[0].d = compute_(connected, b[0].unitLits, b[0].freeVars, out);
     m_solver->popAssumption();
+    m_lastNodeWasNonBinaryDeterministOr = false;
+    m_currentNonBinaryDeterministOrSequence = 0;
 
-    if (m_solver->isInAssumption(l))
+    if (m_solver->isInAssumption(l)){
       b[1].d = m_operation->manageBottom();
-    else if (m_solver->isInAssumption(~l))
+    } else if (m_solver->isInAssumption(~l)) {
       b[1].d = compute_(connected, b[1].unitLits, b[1].freeVars, out);
-    else {
+      m_lastNodeWasNonBinaryDeterministOr = false;
+      m_currentNonBinaryDeterministOrSequence = 0;
+    } else {
       m_solver->pushAssumption(~l);
       b[1].d = compute_(connected, b[1].unitLits, b[1].freeVars, out);
       m_solver->popAssumption();
+      m_lastNodeWasNonBinaryDeterministOr = false;
+      m_currentNonBinaryDeterministOrSequence = 0;
     }
 
     unsetCurrentPriority(cutSet);
@@ -561,8 +626,9 @@ private:
   U compute(std::vector<Var> &setOfVar, std::ostream &out,
             bool warmStart = true) {
     if (m_problem->isUnsat() || (warmStart && !m_panicMode &&
-                                 !m_solver->warmStart(29, 11, setOfVar, m_out)))
+                                 !m_solver->warmStart(29, 11, setOfVar, m_out))) {
       return m_operation->manageBottom();
+      }
 
     DataBranch<U> b;
     b.d = compute_(setOfVar, b.unitLits, b.freeVars, out);
@@ -611,6 +677,7 @@ public:
       setOfVar.push_back(i);
 
     U result = compute(setOfVar, m_out);
+    printFinalStats(m_out);
     m_operation->manageResult(result, config, m_out);
   } // run
 
