@@ -34,6 +34,7 @@ public:
                     std::vector<double> &weightVar, std::vector<Var> &selected,
                     int freevars = 0);
   ProblemManagerCnf(ProblemManager *problem);
+  ProblemManagerCnf(ProblemManager *problem, bool fullCopy);
   ProblemManagerCnf(std::string &nameFile);
   ~ProblemManagerCnf();
   void normalize() override;

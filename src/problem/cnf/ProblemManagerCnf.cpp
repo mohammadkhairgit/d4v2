@@ -66,6 +66,31 @@ ProblemManagerCnf::ProblemManagerCnf(ProblemManager *problem) {
 /**
  * @brief Construct a new Problem Manager Cnf:: Problem Manager Cnf object
  *
+ * @param problem, a problem manager object.
+ */
+ProblemManagerCnf::ProblemManagerCnf(ProblemManager *problem, bool fullCopy) {
+  m_nbVar = problem->getNbVar();
+  m_weightLit = problem->getWeightLit();
+  m_weightVar = problem->getWeightVar();
+  m_selected = problem->getSelectedVar();
+  m_maxVar = problem->getMaxVar();
+  m_indVar = problem->getIndVar();
+  m_isUnsat = false;
+  m_nbFreeVars = problem->freeVars();
+  m_gmap = problem->gmap();
+
+  if (fullCopy) {
+    ProblemManagerCnf *p = dynamic_cast<ProblemManagerCnf *>(problem);
+    assert(p);
+    m_clauses = p->getClauses();
+    m_learnt = p->getLearnt();
+  }
+
+} // constructor
+
+/**
+ * @brief Construct a new Problem Manager Cnf:: Problem Manager Cnf object
+ *
  * @param nbVar, the number of variables.
  * @param weightLit, the weights associate with the literals.
  * @param weightVar, the weights associate with the variables (sum of weight

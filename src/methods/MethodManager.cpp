@@ -190,7 +190,7 @@ ProblemManager *MethodManager::runPreproc(Config &config,
                                           std::ostream &out,
                                           LastBreathPreproc &lastBreath) {
   ProblemManager *problem;
-  if (config.alternative_input.empty()) {
+  if (config.alternative_input.empty() && config.preproc == "basic") {
     PreprocManager *preproc = PreprocManager::makePreprocManager(config, out);
     assert(preproc);
     ProblemManager *problem = preproc->run(initProblem, lastBreath);
@@ -201,7 +201,17 @@ ProblemManager *MethodManager::runPreproc(Config &config,
     assert(problem);
     delete preproc; // the preproc won't be used.
     return problem;
+  } else if (config.alternative_input.empty()) {
+    out << "c [WARNING] No preproc will be used, as the preproc option is not "
+           "set to basic\n";
+    lastBreath.panic = false;
+    lastBreath.countConflict.resize(initProblem->getNbVar() + 1, 0);
+    lastBreath.learnt.clear();
+
+    return new ProblemManagerCnf(initProblem, true);
   } else {
+    out << "c [WARNING] No preproc will be used, as the alternative input is "
+           "set\n";
     lastBreath.panic = false;
     lastBreath.countConflict.resize(initProblem->getNbVar() + 1, 0);
     lastBreath.learnt.clear();

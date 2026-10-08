@@ -54,6 +54,23 @@ template <class T> class Counter;
 template <class T, class U>
 class DpllStyleMethod : public MethodManager, public Counter<T> {
 private:
+
+  // inline void printstuff() {
+  //   if (number_of_choices % 10000000 == 0) {
+  //     std::cout << "current assignment: ";
+  //     for (Var v = 1; v <= m_specs->getNbVariable(); v++) {
+  //       if (!m_solver->varIsAssigned(v))
+  //         continue;
+
+  //       bool isFalse = m_solver->getModelVar(v) == l_False;
+  //       std::cout << Lit::makeLit(v, isFalse).human() << " ";
+  //     }
+  //     std::cout << std::endl;
+  //     number_of_choices = 0;
+  //   }
+  // }
+
+
   bool optDomConst;
   bool optReversePolarity;
 
@@ -96,6 +113,8 @@ private:
   bool m_panicMode;
 
   Operation<T, U> *m_operation;
+
+  // int number_of_choices = 0;
 
 public:
   /**
@@ -412,11 +431,20 @@ private:
 
     if (!m_solver->solve(setOfVar)) {
       finishNonBinaryDeterministOrSequence();
+      // printstuff();
       return m_operation->manageBottom();
     }
 
     m_solver->whichAreUnits(setOfVar, unitsLit); // collect unit literals
+    // std::ofstream unitLog("DpllStyleMethod_units.txt", std::ios::app);
+    // unitLog << "unit literals: ";
+    // for (const auto &unit : unitsLit)
+    //   unitLog << unit.var() << (unit.sign() ? " negative" : " positive")
+    //           << std::endl;
+    // unitLog << std::endl;
+    // unitLog.close();
     m_specs->preUpdate(unitsLit);
+
 
     // compute the connected component
     std::vector<std::vector<Var>> varConnected;
@@ -515,8 +543,10 @@ private:
      \return the compiled formula.
   */
   U computeDecisionNode(std::vector<Var> &connected, std::ostream &out) {
+    // number_of_choices++;
+    // printstuff();
     std::vector<Var> cutSet;
-    std::vector<Lit> alternativeClause;
+    std::vector<Lit> original_alternativeClause;
     bool hasPriority = false, hasVariable = false;
     for (auto v : connected) {
       if (m_specs->varIsAssigned(v) || !m_isDecisionVariable[v])
@@ -527,7 +557,7 @@ private:
     }
 
     if (!hasPriority && clauseScoringEnabled &&
-        AlternativeOrVariableBranch(connected, alternativeClause)) {
+        AlternativeOrVariableBranch(connected, original_alternativeClause)) {
       unsigned parentSequenceLength = m_currentNonBinaryDeterministOrSequence;
       m_nbNonBinaryDeterministOr++;
       if (m_lastNodeWasNonBinaryDeterministOr) {
@@ -542,17 +572,21 @@ private:
             m_currentNonBinaryDeterministOrSequence;
       m_lastNodeWasNonBinaryDeterministOr = true;
 
+      vector<Lit> alternativeClause;
+
+      // use this to only create a branch if needed originally.
+      for (auto &l : original_alternativeClause) {
+        if (!m_solver->varIsAssigned(l.var())) {
+          alternativeClause.push_back(l);
+        }
+      }
       m_nbDecisionNode++;
 
       std::vector<DataBranch<U>> branches;
       branches.reserve(alternativeClause.size());
       for (unsigned i = 0; i < alternativeClause.size(); i++) {
         Lit l = alternativeClause[i];
-        // Only create a branch if needed.
-        if (m_solver->varIsAssigned(l.var()) ||
-            !m_isDecisionVariable[l.var()]) {
-          continue;
-        } else {
+
           m_solver->pushAssumption(l);
           branches.push_back(DataBranch<U>());
           branches.back().d = compute_(connected, branches.back().unitLits,
@@ -560,7 +594,6 @@ private:
           m_solver->popAssumption();
           m_currentNonBinaryDeterministOrSequence = parentSequenceLength + 1;
           m_lastNodeWasNonBinaryDeterministOr = true;
-        }
       }
       return m_operation->manageNonBinaryDeterministOr(branches.data(),
                                                        branches.size());
@@ -578,6 +611,7 @@ private:
     Var v = m_hVar->selectVariable(connected, *m_specs, m_currentPrioritySet);
     if (v == var_Undef) {
       unsetCurrentPriority(cutSet);
+      // printstuff();
       return m_operation->manageTop(connected);
     }
 
@@ -595,6 +629,7 @@ private:
     m_currentNonBinaryDeterministOrSequence = 0;
 
     if (m_solver->isInAssumption(l)){
+      // printstuff();
       b[1].d = m_operation->manageBottom();
     } else if (m_solver->isInAssumption(~l)) {
       b[1].d = compute_(connected, b[1].unitLits, b[1].freeVars, out);
@@ -627,9 +662,19 @@ private:
             bool warmStart = true) {
     if (m_problem->isUnsat() || (warmStart && !m_panicMode &&
                                  !m_solver->warmStart(29, 11, setOfVar, m_out))) {
+      // printstuff();
       return m_operation->manageBottom();
       }
-
+    // try {
+    //   SpecManagerAll &specsAll = dynamic_cast<SpecManagerAll &>(*m_specs);
+    //   specsAll.printAllAsCNF(m_out);
+    //   std::ofstream m_out_file("m_out.txt");
+    //   specsAll.printAllAsCNF(m_out_file);
+    //   // specsAll.showFormula(m_out);
+    // } catch (std::bad_cast &bc) {
+    //   m_out << "c [WARNING] SpecManager is not SpecManagerAll, cannot print "
+    //            "CNF\n";
+    // }
     DataBranch<U> b;
     b.d = compute_(setOfVar, b.unitLits, b.freeVars, out);
     return m_operation->manageBranch(b);
@@ -678,6 +723,14 @@ public:
 
     U result = compute(setOfVar, m_out);
     printFinalStats(m_out);
+    // try {
+    //   SpecManagerAll &specsAll = dynamic_cast<SpecManagerAll &>(*m_specs);
+    //   specsAll.printAllAsCNF(m_out);
+    //   // specsAll.showFormula(m_out);
+    // } catch (std::bad_cast &bc) {
+    //   m_out << "c [WARNING] SpecManager is not SpecManagerAll, cannot print "
+    //            "CNF\n";
+    // }
     m_operation->manageResult(result, config, m_out);
   } // run
 

@@ -64,6 +64,8 @@ private:
   struct AllocSizeInfo {
     unsigned nbBitEltVar = 0;
     unsigned nbByteStoreVar = 0;
+    // Mixed formulas need clause kinds check.
+    unsigned nbByteStoreClauseKind = 0;
     unsigned nbByteStoreFormula = 0;
     unsigned nbBitStoreLit = 0;
     unsigned totalByte = 0;
@@ -84,6 +86,8 @@ private:
   std::vector<int> m_mustUnMark;
   std::vector<int> m_markIdx;
   std::vector<unsigned> m_idInVecBucket;
+  // Clause kind.
+  std::vector<unsigned char> m_clauseKind;
 
   BucketInConstruction m_inConstruction;
   unsigned *m_memoryPosWrtClauseSize;
@@ -264,6 +268,9 @@ public:
       m_markIdx[idx] = -1;
       inConstruction.shiftedSizeClause[b.start] =
           inConstruction.sizeClauses[idx];
+        // Store the semantic kind for the retained representative of this clause.
+      m_clauseKind[b.start] = static_cast<unsigned char>(
+          this->m_specManager.getClause(idx)->kind());
       if (b.end != b.start + 1) {
         realSizeDistrib -=
             (b.end - b.start - 1) * this->m_specManager.getCurrentSize(idx);
@@ -281,6 +288,8 @@ public:
         inConstruction.distribDiffSize[inConstruction.shiftedSizeClause[i]]++;
         inConstruction.shiftedSizeClause[index] =
             inConstruction.shiftedSizeClause[i];
+        // Keep kind metadata aligned.
+        m_clauseKind[index] = m_clauseKind[i];
         inConstruction.shiftedIndexClause[i] = index++;
       } else
         inConstruction.shiftedIndexClause[i] = inConstruction.sizeDistrib;
@@ -300,6 +309,8 @@ public:
     inConstruction.reinit();
     m_unusedBucket = -1;
     m_vecBucketSortInfo.resize(0);
+    // Rebuild metadata for each independently serialized bucket.
+    m_clauseKind.assign(this->m_nbClauseCnf, 0);
   } // initSortBucket
 
   /**
@@ -343,6 +354,8 @@ public:
     }
 
     ret.nbBitStoreLit = nbBitUnsigned(2 + (component.size() << 1));
+    // One byte is stored for every non-redundant residual clause.
+    ret.nbByteStoreClauseKind = inConstruction.nbClauseInDistrib;
 
     // info about the distribution.
     unsigned cptLitFormula = 0, cptDistrib = 0;
@@ -357,8 +370,9 @@ public:
     ret.nbByteStoreFormula =
         (!cptDistrib)
             ? 0
-            : 1 + ((ret.nbBitStoreLit * ((cptDistrib << 1) + cptLitFormula)) >>
-                   3);
+        : ret.nbByteStoreClauseKind +
+            1 + ((ret.nbBitStoreLit *
+              ((cptDistrib << 1) + cptLitFormula)) >> 3);
 
     ret.totalByte = ret.nbByteStoreVar + ret.nbByteStoreFormula;
     return ret;
@@ -459,7 +473,11 @@ public:
                      BucketInConstruction &inConstruction) {
     unsigned remaining = 8;
     char *p = data;
-    memset(p, 0, info.nbByteStoreFormula);
+    // Put clause kinds in the serialized bytes so CNF and alternative clauses
+    // with identical literals cannot share a cache entry.
+    memcpy(p, m_clauseKind.data(), info.nbByteStoreClauseKind);
+    p += info.nbByteStoreClauseKind;
+    memset(p, 0, info.nbByteStoreFormula - info.nbByteStoreClauseKind);
 
     // map the variables to their position.
     for (unsigned i = 0; i < component.size(); i++)

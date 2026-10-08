@@ -17,8 +17,8 @@
  */
 #pragma once
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <memory>
 #include <ostream>
@@ -228,6 +228,15 @@ public:
      \return the number of non-projected variables in the clause.
    */
   inline unsigned getNbNonProjectedVars() const { return m_nbNonProjectedVars; }
+
+  /**
+   *    \return if the clause became positive pure
+   */
+  virtual bool isPositivePure() const = 0;
+  /**
+   *   \return if the clause became negative pure
+   */
+  virtual bool isNegativePure() const = 0;
 };
 
 /**
@@ -275,6 +284,10 @@ public:
     \return true if at least one literal in the clause is satisfied.
  */
   bool isSatisfied() const override { return m_nbSatLit > 0; }
+
+  bool isPositivePure() const override { return true; }
+
+  bool isNegativePure() const override { return false; }
 };
 
 /**
@@ -365,5 +378,9 @@ public:
   bool isSatisfied() const override {
     return m_nbSatLit == 1 && m_nbUnsatLit == m_literals.size() - 1;
   }
+  bool isPositivePure() const override {
+    return m_nbUnsatLit == m_literals.size() - 1;
+  }
+  bool isNegativePure() const override { return m_nbSatLit == 1; }
 };
 } // namespace d4

@@ -89,6 +89,7 @@ private:
 
   void createOperation(Config &config) {
     if constexpr (std::is_same_v<O, DecisionDNNFOperation<T, U>>) {
+      std::cout << "c [INFO] using DecisionDNNFOperation" << std::endl;
       m_operation =
           new DecisionDNNFOperation<T, U>(m_problem, m_specs, m_solver);
     }
@@ -98,9 +99,11 @@ private:
                                "persistent nodes operation",
                                __FILE__, __LINE__));
       }
+      std::cout << "c [INFO] using PersistentNodesOperation" << std::endl;
       m_operation = new PersistentNodesOperation<T>(m_problem, config.output);
     }
     if constexpr (std::is_same_v<O, CountingOperation<T>>) {
+      std::cout << "c [INFO] using CountingOperation" << std::endl;
       m_operation = new CountingOperation<T>(m_problem);
     }
   }
@@ -200,6 +203,7 @@ public:
                               ((SpecManagerCnf *)m_specs)->getNbClause();
     if (projected_ratio < 0.10 | clause_var_ratio > 0.5 |
         !config.alternative_input.empty()) {
+      std::cout << "c [INFO] using PartitioningHeuristicNone" << std::endl;
       m_hCutSet = PartitioningHeuristic::makePartitioningHeuristicNone(m_out);
     } else {
       m_hCutSet = PartitioningHeuristic::makePartitioningHeuristic(
@@ -611,7 +615,7 @@ private:
   */
   U computeDecisionNode(ProjVars &connected, std::ostream &out) {
     std::vector<Var> cutSet;
-    std::vector<Lit> alternativeClause;
+    std::vector<Lit> original_alternativeClause;
     bool hasPriority = false, hasVariable = false;
     for (auto v : connected.vars) {
       if (m_specs->varIsAssigned(v) || !m_specs->isSelected(v))
@@ -623,7 +627,7 @@ private:
 
     if (!hasPriority &&
         clauseScoringEnabled &&
-        AlternativeOrVariableBranch(connected.vars, alternativeClause)) {
+        AlternativeOrVariableBranch(connected.vars, original_alternativeClause)) {
       unsigned parentSequenceLength = m_currentNonBinaryDeterministOrSequence;
       m_nbNonBinaryDeterministOr++;
       if (m_lastNodeWasNonBinaryDeterministOr) {
@@ -638,24 +642,27 @@ private:
             m_currentNonBinaryDeterministOrSequence;
       m_lastNodeWasNonBinaryDeterministOr = true;
 
+      vector<Lit> alternativeClause;
+      std::vector<Lit> undecidableLiterals = {};
+      std::vector<Lit> decidableLiterals = {};
+
+      for (auto &l : original_alternativeClause) {
+        if (!m_solver->varIsAssigned(l.var()) && m_specs->isSelected(l.var())) {
+          alternativeClause.push_back(l);
+          decidableLiterals.push_back(l);
+        }
+        if (!m_specs->isSelected(l.var())) {
+          undecidableLiterals.push_back(l);
+        }
+      }
 
       m_nbDecisionNode++;
 
       std::vector<DataBranch<U>> branches;
       branches.reserve(alternativeClause.size());
-      std::vector<Lit> undecidableLiterals = {};
-      std::vector<Lit> decidableLiterals = {};
       for (unsigned i = 0; i < alternativeClause.size(); i++) {
         Lit l = alternativeClause[i];
-        // Only create a branch if needed.
-        if (!m_specs->isSelected(l.var())) {
-          undecidableLiterals.push_back(l);
-          continue;
-        }
-        if (m_solver->varIsAssigned(l.var())) {
-          continue;
-        }
-        decidableLiterals.push_back(l);
+        
         m_solver->pushAssumption(l);
         branches.push_back(DataBranch<U>());
         branches.back().d = compute_(connected, branches.back().unitLits,
@@ -664,7 +671,7 @@ private:
         m_currentNonBinaryDeterministOrSequence = parentSequenceLength + 1;
         m_lastNodeWasNonBinaryDeterministOr = true;
       }
-      // case we have undecidable literals, supposedly all can be covered in one
+      // case we have undecidable literals, all can be covered in one
       // branch.
       if (!undecidableLiterals.empty()) {
         for (unsigned j = 0; j < decidableLiterals.size(); j++) {
