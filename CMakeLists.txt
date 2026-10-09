@@ -13,7 +13,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # FIXME: libmtkahypar currently can not be built statically (https://github.com/kahypar/mt-kahypar/pull/161)
 option(BUILD_SHARED_LIBS "Build shared libraries." ON)
-option(D4_BUILD_TESTS "Build and register test targets" OFF)
+option(D4_BUILD_TESTS "Build and register test targets" ON)
 
 if(NOT BUILD_SHARED_LIBS)
     set(GMP_USE_STATIC_LIBS ON)
@@ -39,6 +39,11 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${arjun_INCLUDE_DIR})
 include_directories(${GMPC_INCLUDE_DIR})
 include_directories(${glucose_INCLUDE_DIRS})
+
+set_source_files_properties(
+    src/methods/MethodManager.cpp
+    PROPERTIES COMPILE_OPTIONS "-O0;-g3;-fno-inline"
+)
 
 add_library(caching OBJECT
     src/caching/BucketAllocator.cpp
@@ -70,8 +75,11 @@ add_library(heuristics OBJECT
     src/heuristics/cnf/ScoringMethodDlcs.cpp
     src/heuristics/cnf/ScoringMethodJwts.cpp
     src/heuristics/cnf/ScoringMethodMom.cpp
+    src/heuristics/cnf/ScoringMethodMomAll.cpp
     src/heuristics/cnf/ScoringMethodVsads.cpp
     src/heuristics/cnf/ScoringMethodVsids.cpp
+    src/heuristics/clauseScoring/alternative/ClauseScoringMethodLiteralMetric.cpp
+    src/heuristics/clauseScoring/alternative/ClauseScoringMethodNone.cpp
     src/heuristics/PartitioningHeuristic.cpp
     src/heuristics/PartitioningHeuristicNone.cpp
     src/heuristics/PhaseHeuristic.cpp
@@ -81,6 +89,7 @@ add_library(heuristics OBJECT
     src/heuristics/PhaseHeuristicTrue.cpp
     src/heuristics/ProjBackupHeuristic.cpp
     src/heuristics/ScoringMethod.cpp
+    src/heuristics/ClauseScoringMethod.cpp
 )
 
 add_library(hyperGraph OBJECT
@@ -194,6 +203,11 @@ if(D4_BUILD_TESTS)
     target_link_libraries(SpecManagerTest PRIVATE core GTest::gtest_main)
     add_test(NAME SpecManagerTest COMMAND SpecManagerTest)
     set_tests_properties(SpecManagerTest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+    add_executable(WrapperMinisatTest tests/alternative/solver/WrapperMinisatTest.cpp)
+    target_link_libraries(WrapperMinisatTest PRIVATE core GTest::gtest_main)
+    add_test(NAME WrapperMinisatTest COMMAND WrapperMinisatTest)
+    set_tests_properties(WrapperMinisatTest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 endif()
 

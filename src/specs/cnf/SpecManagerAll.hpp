@@ -18,8 +18,8 @@
 #pragma once
 
 #include <cassert>
-#include <list>
 #include <memory>
+#include <unordered_map>
 
 #include "../SpecManager.hpp"
 #include "DataOccurrence.hpp"
@@ -62,13 +62,13 @@ protected:
   // clause)
   std::vector<std::unique_ptr<ClauseType>> m_clauses;
   // Live clause indices grouped by clause kind.
-  std::vector<std::list<unsigned>> m_clausesByType;
+  std::vector<std::unordered_map<unsigned, bool>> m_clausesByType;
   // Indices of clauses that are not binary clauses. Index for the attribute
   // m_clauses.
   std::vector<int> m_clausesNotBinary;
   // Number of occurrences of each variable in non-CNF clauses. Index start from
   // 1 to m_nbVar. Index 0 is not used.
-  std::vector<unsigned> m_varCurrentOccurrenceInNonCnfClause;
+  std::unordered_map<Var, bool> m_varCurrentOccurrenceInNonCnfClause;
   // The size of the largest clause in the mixed formula.
   unsigned m_maxSizeClause;
   // current partial assignment
@@ -114,11 +114,11 @@ protected:
   }
 
   inline void removeClauseIndexFromType(unsigned idxCl) {
-    m_clausesByType[clauseKindIdx(idxCl)].remove(idxCl);
+    m_clausesByType[clauseKindIdx(idxCl)][idxCl] = false;
   }
 
   inline void addClauseIndexToType(unsigned idxCl) {
-    m_clausesByType[clauseKindIdx(idxCl)].push_back(idxCl);
+    m_clausesByType[clauseKindIdx(idxCl)][idxCl] = true;
   }
 
 public:
@@ -131,8 +131,9 @@ public:
 
     auto kindIdx = static_cast<std::size_t>(kind);
     assert(kindIdx < m_clausesByType.size());
-    for (auto idx : m_clausesByType[kindIdx]) {
-      if (isNotSatisfiedClauseAndInComponent((int)idx, m_inCurrentComponent))
+    for (const auto &[idx, isActive] : m_clausesByType[kindIdx]) {
+      if (isActive &&
+          isNotSatisfiedClauseAndInComponent((int)idx, m_inCurrentComponent))
         idxClauses.push_back(idx);
     }
 
