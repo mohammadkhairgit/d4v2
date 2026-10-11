@@ -18,6 +18,7 @@ protected:
   struct ClauseScores {
     double clauseCompareScore = -1;
     double literalCompareScore = -1;
+    int nbBranches = 0;
   };
 
   ClauseScoringMethodLiteralMetric(SpecManagerAll &specManager,

@@ -93,6 +93,13 @@ double ClauseScoringMethodLiteralMetric::getBestScoreClause(
       foundClause = true;
       bestClauseScore.clauseCompareScore = current.clauseCompareScore;
       bestClauseScore.literalCompareScore = current.literalCompareScore;
+      bestClauseScore.nbBranches = current.nbBranches;
+      clause = currentClause.getLiterals();
+    } else if (current.clauseCompareScore == bestClauseScore.clauseCompareScore &&
+               current.nbBranches < bestClauseScore.nbBranches) {
+      bestClauseScore.clauseCompareScore = current.clauseCompareScore;
+      bestClauseScore.literalCompareScore = current.literalCompareScore;
+      bestClauseScore.nbBranches = current.nbBranches;
       clause = currentClause.getLiterals();
     }
   }
@@ -140,6 +147,7 @@ ClauseScoringMethodLiteralMin::computeClauseScore(const ClauseType &clause) {
 
   clauseScore.clauseCompareScore = score;
   clauseScore.literalCompareScore = score;
+  clauseScore.nbBranches = numberOfBranches;
 
   return clauseScore;
 }
@@ -199,6 +207,7 @@ ClauseScoringMethodBranchMin::computeClauseScore(const ClauseType &clause) {
   // branchesScores.end()));
   clauseScore.clauseCompareScore = minimalBranchScore;
   clauseScore.literalCompareScore = minimalBranchScore;
+  clauseScore.nbBranches = numberOfBranches;
   // In case all branches have almost (or exactly) the same score, then ignore
   // the stddev.
   return clauseScore;
@@ -259,6 +268,7 @@ ClauseScoringMethodBranchMax::computeClauseScore(const ClauseType &clause) {
   // branchesScores.end()));
   clauseScore.clauseCompareScore = maximalBranchScore;
   clauseScore.literalCompareScore = maximalBranchScore;
+  clauseScore.nbBranches = numberOfBranches;
   // In case all branches have almost (or exactly) the same score, then ignore
   // the stddev.
   return clauseScore;
@@ -292,6 +302,7 @@ ClauseScoringMethodLiteralMax::computeClauseScore(const ClauseType &clause) {
 
   clauseScore.clauseCompareScore = score;
   clauseScore.literalCompareScore = score;
+  clauseScore.nbBranches = numberOfBranches;
 
   return clauseScore;
 }
@@ -325,6 +336,7 @@ ClauseScoringMethodLiteralSum::computeClauseScore(const ClauseType &clause) {
 
   clauseScore.clauseCompareScore = score;
   clauseScore.literalCompareScore = score;
+  clauseScore.nbBranches = numberOfBranches;
 
   return clauseScore;
 }
@@ -357,7 +369,7 @@ ClauseScoringMethodLiteralSumOverBranchAvg::computeClauseScore(
 
   clauseScore.clauseCompareScore = score / numberOfBranches;
   clauseScore.literalCompareScore = score / numberOfBranches;
-
+  clauseScore.nbBranches = numberOfBranches;
   // return the avg score over the to be created branches
   return clauseScore;
 }
@@ -423,7 +435,7 @@ ClauseScoringMethodBranchesAvgDividedByDistribution::computeClauseScore(
   clauseScore.literalCompareScore = stddev > 1
                                         ? score / (numberOfBranches * stddev)
                                         : score / numberOfBranches;
-  ;
+  clauseScore.nbBranches = numberOfBranches;
   // In case all branches have almost (or exactly) the same score, then ignore
   // the stddev.
   return clauseScore;
