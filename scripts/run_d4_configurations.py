@@ -35,15 +35,15 @@ with output_ddnnf_file.open("a") as log2:
 
 # Edit these arrays to select the runs for a batch.
 FILE_NAMES = [
-    # "1-Car_with_all_features_unsliced",
+    "1-Car_with_all_features_unsliced",
     # "1-Car_with_all_features_unsliced (Copy)",
-    # "2-Car_with_all_features_unsliced",
-    # "3-Car_with_all_features_unsliced",
-    # "4-Car_with_all_features_unsliced",
-    # "5-Car_with_all_features_unsliced",
-    # "6-Car_with_all_features_unsliced",
-    # "7-Car_with_all_features_unsliced",
-    # "8-Car_with_all_features_unsliced",
+    "2-Car_with_all_features_unsliced",
+    "3-Car_with_all_features_unsliced",
+    "4-Car_with_all_features_unsliced",
+    "5-Car_with_all_features_unsliced",
+    "6-Car_with_all_features_unsliced",
+    "7-Car_with_all_features_unsliced",
+    "8-Car_with_all_features_unsliced",
     # "Car_with_all_features_unsliced_1d9bb9d8-89e3-4d42-9841-c224c1e7df60",
     # "Car_with_all_features_unsliced_2f8cf3af-e8d4-43cd-bcba-c9a4736459c1",
     # "Car_with_all_features_unsliced_3a57834f-0c66-4e63-a4ed-b0c0e7b05480",
@@ -52,49 +52,50 @@ FILE_NAMES = [
     # "Car_with_all_features_unsliced_8c3c50e6-3381-4b5c-81ac-6336db94f497",
     # "Car_with_all_features_unsliced_d5e97e2a-928e-4e58-aef6-57d07d77cec8",
     # "Car_with_all_features_unsliced_d65c9472-1e79-4338-acd4-1dc49a2cc0a0",
-    # "FinancialServices01-Nieke2018-2018-03-26",
-    # "FinancialServices01-Nieke2018-2018-04-23",
-    # "FinancialServices01-Nieke2018-2018-05-09",
-    # "automotive01-Kowal2016",
-    # "automotive2-Knüppel2017-2_1",
-    # "automotive2-Knüppel2017-2_2",
-    # "automotive2-Knüppel2017-2_3",
-    # "automotive2-Knüppel2017-2_4",
-    # "cdl-adder-Knüppel2017",
+    "FinancialServices01-Nieke2018-2018-03-26",
+    "FinancialServices01-Nieke2018-2018-04-23",
+    "FinancialServices01-Nieke2018-2018-05-09",
+    "automotive01-Kowal2016",
+    "automotive2-Knüppel2017-2_1",
+    "automotive2-Knüppel2017-2_2",
+    "automotive2-Knüppel2017-2_3",
+    "automotive2-Knüppel2017-2_4",
+    "cdl-adder-Knüppel2017",
     # "cdl-adder-Knüppel2017 copy",
-    # "cdl-aim711-Knüppel2017",
-    # "embtoolkit-Knüppel2017",
-    # "firefoxcve-VarelaVaca2020-2002-2436",
-    # "firefoxcve-VarelaVaca2020-2009-1308",
-    # "firefoxcve-VarelaVaca2020-2011-1300",
-    # "firefoxcve-VarelaVaca2020-2012-0471",
-    # "firefoxcve-VarelaVaca2020-2012-3987",
-    # "firefoxcve-VarelaVaca2020-2013-0783",
-    # "firefoxcve-VarelaVaca2020-2015-0819",
-    # "firefoxcve-VarelaVaca2020-2017-5393",
-    # "firefoxcve-VarelaVaca2020-2020-12396",
-    # "linux-Knüppel2017-2.6.33.3",
-    # "pc-richmond-Sprey2020",
+    "cdl-aim711-Knüppel2017",
+    "embtoolkit-Knüppel2017",
+    "firefoxcve-VarelaVaca2020-2002-2436",
+    "firefoxcve-VarelaVaca2020-2009-1308",
+    "firefoxcve-VarelaVaca2020-2011-1300",
+    "firefoxcve-VarelaVaca2020-2012-0471",
+    "firefoxcve-VarelaVaca2020-2012-3987",
+    "firefoxcve-VarelaVaca2020-2013-0783",
+    "firefoxcve-VarelaVaca2020-2015-0819",
+    "firefoxcve-VarelaVaca2020-2017-5393",
+    "firefoxcve-VarelaVaca2020-2020-12396",
+    "linux-Knüppel2017-2.6.33.3",
+    "pc-richmond-Sprey2020",
 ]
 CLAUSE_SCORING_ARRAY = [
-                "none",
-                # "literal-sum",
-                # "literal-sum-over-branch-avg",
+                # "none",
+                "literal-sum",
+                "literal-sum-over-branch-avg",
                 # "literal-min",
-                # "branch-min",
+                "branch-min",
                 # "literal-max",
                 # "branch-max",
                 # "branches-avg-divided-by-distribution"
                 ]
 NO_ALTERNATIVE_SCORING_METHOD_ARRAY = ["mom"]
-CACHE_ACTIVATED_BOOL = [False]
+CACHE_ACTIVATED_BOOL = [True, False]
 SCORING_METHOD_ARRAY = ["mom"]
 ALTERNATIVE_INPUT = [True]
 NO_CLAUSE_SCORING = ["none"]
-RAM_USAGE_LIMIT = 99.0
-RAM_USAGE_START_LIMIT = 40.0
-MAX_RUNTIME_SECONDS = 10 * 60
-
+RAM_USAGE_LIMIT = 95.0
+RAM_USAGE_START_LIMIT = 30.0
+MAX_RUNTIME_SECONDS = 30 * 60
+PARTITIONING_STRATEGY = False
+PREPROCESSING = False
 
 def ram_usage_percent() -> float:
     memory = {}
@@ -215,7 +216,12 @@ def build_command_ddnnife(
         f"{file_name}_cache_{str(cache_activated).lower()}"
         f"_clauseScoring_{clause_scoring}_literalScoring_{scoring_method}_alternative_{str(alternative_input).lower()}_projected_{str(projected).lower()}.ddnnf"
     )
-    command = [str(DDNNFIFE_BINARY), "-i", str(RESULT_DIRECTORY / output_name), "count"]
+    if (not alternative_input) and PARTITIONING_STRATEGY:
+        output_name = (
+            f"{file_name}_cache_{str(cache_activated).lower()}"
+            f"_clauseScoring_{clause_scoring}_literalScoring_{scoring_method}_alternative_{str(alternative_input).lower()}_projected_{str(projected).lower()}_FullOriginal.ddnnf"
+        )
+    command = [str(DDNNFIFE_BINARY), "-i", str(RESULT_DIRECTORY / output_name), "statistics"]
     return command
 
 def build_command(
@@ -234,6 +240,11 @@ def build_command(
         f"{file_name}_cache_{str(cache_activated).lower()}"
         f"_clauseScoring_{clause_scoring}_literalScoring_{scoring_method}_alternative_{str(alternative_input).lower()}_projected_{str(projected).lower()}.ddnnf"
     )
+    if (not alternative_input) and PARTITIONING_STRATEGY:
+        output_name = (
+            f"{file_name}_cache_{str(cache_activated).lower()}"
+            f"_clauseScoring_{clause_scoring}_literalScoring_{scoring_method}_alternative_{str(alternative_input).lower()}_projected_{str(projected).lower()}_FullOriginal.ddnnf"
+        )
 
     command = [
         str(D4_BINARY),
@@ -259,6 +270,15 @@ def build_command(
             str(cache_activated).lower(),
         ]
     )
+    if (not alternative_input) and PARTITIONING_STRATEGY:
+        command.extend(["--partitioning-heuristic", "decomposition-static-dual"])
+    else:
+        command.extend(["--partitioning-heuristic", "none"])
+    if (not alternative_input) and PREPROCESSING:
+        command.extend(["--preproc", "basic"])
+    else:
+        command.extend(["--preproc", "none"])
+
     if projected:
         command.extend(["-m", "proj-ddnnf-compiler"])
     else:
@@ -308,6 +328,7 @@ def main() -> None:
                             "clause scoring": clause_scoring,
                             "alternative input": alternative_input,
                             "projected": False,
+                            "preprocessing and partitioning": PREPROCESSING if (not alternative_input) else False,
                         },
                     )
             except subprocess.CalledProcessError as error:
@@ -332,6 +353,7 @@ def main() -> None:
                     log2.write("cache activated: {}\n".format(cache_activated))
                     log2.write("scoring method: {}\n".format(scoring_method))
                     log2.write("clause scoring: {}\n".format(clause_scoring))
+                    log2.write("preprocessing and partitioning: {}\n".format(PREPROCESSING if (not alternative_input) else False))
                     log2.write("alternative input: {}\n".format(alternative_input))
                     run_with_memory_limit(
                         command,
@@ -343,6 +365,7 @@ def main() -> None:
                             "clause scoring": clause_scoring,
                             "alternative input": alternative_input,
                             "projected": False,
+                            "preprocessing and partitioning": PREPROCESSING if (not alternative_input) else False,
                         },
                     )
             except subprocess.CalledProcessError as error:
@@ -373,6 +396,7 @@ def main() -> None:
                         "clause scoring": "none",
                         "alternative input": False,
                         "projected": False,
+                        "preprocessing and partitioning": PREPROCESSING if (not False) else False,
                     },
                 )
         except subprocess.CalledProcessError as error:
@@ -407,6 +431,7 @@ def main() -> None:
                         "clause scoring": "none",
                         "alternative input": False,
                         "projected": False,
+                        "preprocessing and partitioning": PREPROCESSING if (not False) else False,
                     },
                 )
         except subprocess.CalledProcessError as error:
