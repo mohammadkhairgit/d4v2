@@ -8,11 +8,6 @@
 
 namespace d4 {
 
-double calculateVariance(const std::vector<double> &values);
-double calculateStandardDeviation(const std::vector<double> &values);
-double calculateLowerQuartile(const std::vector<double> &values);
-double calculateUpperQuartile(const std::vector<double> &values);
-
 class ClauseScoringMethodLiteralMetric : public ClauseScoringMethod {
 protected:
   struct ClauseScores {
@@ -25,10 +20,24 @@ protected:
                                    ScoringMethod &scoringMethod)
       : ClauseScoringMethod(specManager, scoringMethod) {}
 
+  /**
+   * @brief Return false if the literal is assigned or if the literal is not a
+   * projected variable and we have projected case set to true.
+   */
   bool skipLiteralScoring(const Lit &lit) const;
 
 public:
+  /**
+   * @brief Computes the score of a clause.
+   * @param[in] clause the clause to score.
+   * @return the score of the clause.
+   */
   virtual double computeScore(const ClauseType &clause) override;
+  /**
+   * @brief Computes the score of a clause.
+   * @param[in] clause the clause to score.
+   * @return ClauseScores struct.
+   */
   virtual ClauseScores computeClauseScore(const ClauseType &clause) = 0;
   double getBestScoreClause(std::vector<Var> &connected,
                             std::vector<Lit> &clause) override;
@@ -39,6 +48,11 @@ public:
   ClauseScoringMethodLiteralSum(SpecManagerAll &specManager,
                                 ScoringMethod &scoringMethod)
       : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
+  /**
+   * @brief Computes the score of a clause by summing over the scores of all
+   * branches (Sum over (literal_negative_score * numberOfBranches +
+   * literal_positive_score) for all literals).
+   */
   ClauseScores computeClauseScore(const ClauseType &clause) override;
 };
 
@@ -48,6 +62,10 @@ public:
   ClauseScoringMethodLiteralSumOverBranchAvg(SpecManagerAll &specManager,
                                              ScoringMethod &scoringMethod)
       : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
+  /**
+   * @brief Computes the score of a clause by summing over the scores of all
+   * branches and dividing by the number of branches.
+   */
   ClauseScores computeClauseScore(const ClauseType &clause) override;
 };
 class ClauseScoringMethodLiteralMin : public ClauseScoringMethodLiteralMetric {
@@ -55,6 +73,10 @@ public:
   ClauseScoringMethodLiteralMin(SpecManagerAll &specManager,
                                 ScoringMethod &scoringMethod)
       : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
+  /**
+   * @brief Computes the score of a clause by taking the minimum of the scores
+   * of all literals.
+   */
   ClauseScores computeClauseScore(const ClauseType &clause) override;
 };
 class ClauseScoringMethodBranchMin : public ClauseScoringMethodLiteralMetric {
@@ -62,6 +84,10 @@ public:
   ClauseScoringMethodBranchMin(SpecManagerAll &specManager,
                                ScoringMethod &scoringMethod)
       : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
+  /**
+   * @brief Computes the score of a clause by taking the minimum of the scores
+   * of all branches.
+   */
   ClauseScores computeClauseScore(const ClauseType &clause) override;
 };
 class ClauseScoringMethodLiteralMax : public ClauseScoringMethodLiteralMetric {
@@ -69,6 +95,10 @@ public:
   ClauseScoringMethodLiteralMax(SpecManagerAll &specManager,
                                 ScoringMethod &scoringMethod)
       : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
+  /**
+   * @brief Computes the score of a clause by taking the maximum of the scores
+   * of all literals.
+   */
   ClauseScores computeClauseScore(const ClauseType &clause) override;
 };
 class ClauseScoringMethodBranchMax : public ClauseScoringMethodLiteralMetric {
@@ -76,14 +106,10 @@ public:
   ClauseScoringMethodBranchMax(SpecManagerAll &specManager,
                                ScoringMethod &scoringMethod)
       : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
-  ClauseScores computeClauseScore(const ClauseType &clause) override;
-};
-class ClauseScoringMethodBranchesAvgDividedByDistribution
-    : public ClauseScoringMethodLiteralMetric {
-public:
-  ClauseScoringMethodBranchesAvgDividedByDistribution(
-      SpecManagerAll &specManager, ScoringMethod &scoringMethod)
-      : ClauseScoringMethodLiteralMetric(specManager, scoringMethod) {}
+  /**
+   * @brief Computes the score of a clause by taking the maximum of the scores
+   * of all branches.
+   */
   ClauseScores computeClauseScore(const ClauseType &clause) override;
 };
 } // namespace d4

@@ -61,13 +61,13 @@ protected:
   // of alternative a literal is negative form is not related to the alternative
   // clause)
   std::vector<std::unique_ptr<ClauseType>> m_clauses;
-  // Live clause indices grouped by clause kind.
+  // Current active clause marker divided by clause kind.
   std::vector<std::unordered_map<unsigned, bool>> m_clausesByType;
   // Indices of clauses that are not binary clauses. Index for the attribute
   // m_clauses.
   std::vector<int> m_clausesNotBinary;
-  // Number of occurrences of each variable in non-CNF clauses. Index start from
-  // 1 to m_nbVar. Index 0 is not used.
+  // Does a variable occur in non-CNF clauses (It can never be a pure literal).
+  // Index start from 1 to m_nbVar. Index 0 is not used.
   std::unordered_map<Var, bool> m_varCurrentOccurrenceInNonCnfClause;
   // The size of the largest clause in the mixed formula.
   unsigned m_maxSizeClause;
@@ -109,19 +109,42 @@ protected:
     m_mustUnMark.resize(0);
   }
 
+  /**
+   * @brief Return the kind of clause at the given index.
+   * @param idxCl The index of the clause.
+   * @return The kind of the clause.
+   */
   inline std::size_t clauseKindIdx(unsigned idxCl) const {
     return static_cast<std::size_t>(m_clauses[idxCl]->kind());
   }
 
+  /**
+   * @brief Turn off (become false) the clause at the given index in the
+   * m_clausesByType map.
+   * @param[in] idxCl The index of the clause.
+   */
   inline void removeClauseIndexFromType(unsigned idxCl) {
     m_clausesByType[clauseKindIdx(idxCl)][idxCl] = false;
   }
 
+  /**
+   * @brief Turn on (become true) (or add it to m_clausesByType) the clause at
+   * the given index in the m_clausesByType map.
+   * @param[in] idxCl The index of the clause.
+   */
   inline void addClauseIndexToType(unsigned idxCl) {
     m_clausesByType[clauseKindIdx(idxCl)][idxCl] = true;
   }
 
 public:
+  /**
+   * @brief Get the indices of the clauses of the given kind that are not
+   * satisfied and contain at least one variable in the given component.
+   * @param[out] idxClauses The output vector to store the indices of the
+   * clauses.
+   * @param[in] component The set of variables that define the component.
+   * @param[in] kind The kind of clauses to retrieve.
+   */
   inline void getCurrentClausesByKind(std::vector<unsigned> &idxClauses,
                                       std::vector<Var> &component,
                                       ClauseKind kind) {
@@ -177,7 +200,7 @@ public:
                                 std::vector<Var> &freeVar) override;
 
   /**
-   * Consider the passed literals as assigned and update the occurrence data and
+   * Consider the passed literals as assigned. Update the occurrence data and
    * watchers if conditions are met.
    *
    * @param[in] lits the new assignments
@@ -185,7 +208,7 @@ public:
   void preUpdate(std::vector<Lit> &lits) override;
   /**
    * TODO: Not tested yet.
-   * Consider the passed literals as assigned and update the occurrence data and
+   * Consider the passed literals as assigned. Update the occurrence data and
    * watchers if conditions are met.
    *
    * @param[in] lits the new assignments
@@ -207,6 +230,11 @@ public:
   bool varIsAssigned(Var v) override;
   int getNbOccurrence(Lit l) override;
 
+  /**
+   * @brief return iterator to the binary clauses that contain the given
+   * literal. Warning: only originally binary clauses are returned, also only if
+   * they are not satisfied currently.
+   */
   inline IteratorIdxClause getVecIdxClauseBin(Lit l) {
     assert(l.intern() < m_occurrence.size());
     return m_occurrence[l.intern()].getBinClauses();
@@ -300,19 +328,6 @@ public:
   */
   void getCurrentClausesBin(std::vector<unsigned> &idxClauses,
                             std::vector<Var> &component);
-
-  /**
-    Select one unsatisfied alternative clause from the passed connected
-    component.
-
-    @param[in] component the connected component.
-    @param[out] clause the literals of the selected alternative clause.
-
-    \return true if an unsatisfied alternative clause was found, false
-    otherwise.
-  */
-  bool getAlternativeBranch(std::vector<Var> &component,
-                            std::vector<Lit> &clause) override;
 
   /**
      Return the number of clauses in the mixed formula.
@@ -430,15 +445,16 @@ public:
   }
 
   /**
-   * TODO: The usage of this in Bucket is not tested yet.
+   * @brief Return the number of literals in the clause at the given index that
+   * are assigned.
+   * @param idx The index of the clause.
+   * @return The number of assigned literals in the clause.
+   * @note TODO: The usage of this in Bucket is not tested yet.
    */
   inline int clauseAssignmentCount(int idx) {
     return m_clauses[idx]->getNbUnsatLit() + m_clauses[idx]->getNbSatLit();
   }
 
-  /**
-   * TODO: not tested yet.
-   */
   inline const ClauseType *getClause(int idx) const {
     return m_clauses[idx].get();
   }

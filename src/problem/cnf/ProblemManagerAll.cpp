@@ -111,7 +111,8 @@ ProblemManagerAll::ProblemManagerAll(std::string &nameFile,
 
 } // constructor
 
-/** TODO: This constructor can only be used with a ProblemManagerAll object.**/
+/** Warning: This constructor can only be used with a ProblemManagerAll object.
+ * And it also copy the clauses**/
 ProblemManagerAll::ProblemManagerAll(ProblemManager *problem) {
   m_nbVar = problem->getNbVar();
   m_weightLit = problem->getWeightLit();

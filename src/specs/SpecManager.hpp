@@ -62,24 +62,5 @@ public:
   virtual void showTrail(std::ostream &out) = 0;
   virtual int getNbOccurrence(Lit l) = 0;
   virtual int getNbVariable() = 0;
-
-  /**
-     Pass an unsatisfied alternative clause and return true if a not yet
-     satisfied alternative clause that is still relevent exist in the current
-     connected component, otherwise return false. With relevance we mean that it
-     contain decidable variables still.
-
-     @param[in] component the current connected component.
-     @param[out] clause the literals of the selected alternative clause.
-
-     \return true if a not yet satisfied alternative clause was found, false
-     otherwise.
-  */
-  virtual bool getAlternativeBranch(std::vector<Var> &component,
-                                    std::vector<Lit> &clause) {
-    (void)component;
-    (void)clause;
-    return false;
-  }
 };
 } // namespace d4

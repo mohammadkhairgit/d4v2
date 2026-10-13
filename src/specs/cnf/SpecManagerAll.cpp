@@ -159,10 +159,6 @@ int SpecManagerAll::computeConnectedComponent(
           // Find the root of the clause?
           Var rootW = m_infoCluster[idx + m_nbVar + 1].parent;
           while (rootW != m_infoCluster[rootW].parent) {
-            /**
-             * TODO: I do not understand why we set the parent to the parent of
-             * the parent, but only once?
-             */
             m_infoCluster[rootW].parent =
                 m_infoCluster[m_infoCluster[rootW].parent].parent;
             rootW = m_infoCluster[rootW].parent;
@@ -232,12 +228,6 @@ int SpecManagerAll::computeConnectedComponent(
 int SpecManagerAll::computeConnectedComponent(
     std::vector<ProjVars> &varConnected, std::vector<Var> &setOfVar,
     std::vector<Var> &freeVar) {
-  /** TODO: Mohammad,: (I am waiting on this TODO, because I would like to know
-    that everything is working correctly first.) This code is technically a copy
-    of the other computeConnectedComponent with the only difference at the end.
-    We can create multiple for loops were the other TODO is and instead have 2-3
-    other "mini" functions instead of duplicating the code.
-  */
   for (auto const v : setOfVar) {
     assert(v < m_infoCluster.size());
     m_infoCluster[v].parent = v;
@@ -295,15 +285,6 @@ int SpecManagerAll::computeConnectedComponent(
   std::vector<Var> rootSet;
   freeVar.resize(0);
 
-  /*TODO: Mohammad,: To solve the code duplication, copy the function until here
-    ("Union_find") and then create three for loops One that contain an if
-    "m_infoCluster[v].parent == v && m_infoCluster[v].size == 1" continue and
-    not the last part of the loop. This loop should be part of the first
-    substitution function "Union_Find" The second loop can stay here it is the
-    same loop but it only set the freevar The third loop is the one difference
-    between the two functions and it is the last part of the for loop, which
-    will be done in the third for loop.
-    */
   // With the union-find structure built, create the components and set the free
   // variables with the help of the structure.
   for (auto const &v : setOfVar) {
@@ -768,16 +749,5 @@ void SpecManagerAll::getCurrentClausesBin(std::vector<unsigned> &idxClauses,
   for (auto &v : component)
     m_inCurrentComponent[v] = false;
 } // getCurrentClausesBin
-
-bool SpecManagerAll::getAlternativeBranch(std::vector<Var> &component,
-                                          std::vector<Lit> &clause) {
-  std::vector<unsigned> idxClauses;
-  getCurrentClausesByKind(idxClauses, component, ClauseKind::Alternative);
-  for (auto idx : idxClauses) {
-    clause = m_clauses[idx]->getLiterals();
-    return true;
-  }
-  return false;
-} // getAlternativeBranch
 
 } // namespace d4

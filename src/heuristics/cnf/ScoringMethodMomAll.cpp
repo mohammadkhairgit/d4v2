@@ -12,12 +12,7 @@ ScoringMethodMomAll::ScoringMethodMomAll(SpecManagerAll &o)
 /**
    Compute the score following the well-known MOM heuristic.
 
-   D. Pretolani. Efficiency and stability of hypergraph sat
-   algorithms. In D. S.  Johnson and M. A. Trick, editors, Second
-   DIMACS Implementation Challenge.  American Mathematical Society,
-   1993.
-
-   @param[in] v, the variable we want the score.
+   @param[in] v the variable we want the score.
 */
 double ScoringMethodMomAll::computeScore(Var v) {
   return om.getNbBinaryClause(v) * 0.25;

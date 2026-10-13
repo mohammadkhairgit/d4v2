@@ -37,7 +37,7 @@ BucketInConstruction::BucketInConstruction() {
 /**
    Constructor.
 
-   @param[in] occM, the spec manager.
+   @param[in] occM the spec manager.
 */
 BucketInConstruction::BucketInConstruction(SpecManagerCnf &occM) {
   nbClauseInDistrib = 0;

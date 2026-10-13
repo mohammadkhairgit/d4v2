@@ -26,9 +26,8 @@
 namespace d4 {
 
 /**
-   Mixed problem manager for CNF clauses and exact-one alternative clauses.
-   (With the capability to extend to other clause types in the future.) The
-   problem is stored in this class but never manipulated. But it allow the
+   Mixed problem manager for CNF clauses and other clauses types (ClauseType).
+   The problem is stored in this class but never manipulated. But it allow the
    creation of a new problem manager given an assignment.
  */
 class ProblemManagerAll : public ProblemManager {

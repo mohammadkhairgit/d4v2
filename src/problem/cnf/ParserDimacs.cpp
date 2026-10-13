@@ -56,9 +56,6 @@ int ParserDimacs::parse_DIMACS_main(BufferRead &in,
 
   int nbVars = 0;
   int nbClauses = 0;
-  /* read the header and the clauses by first seeing what kind of problem we
-  have , meaning normal cnf (p cnf), weighted cnf (p wcnf) or a projected cnf (p
-  pcnf). */
   for (;;) {
     in.skipSpace();
     if (in.eof())

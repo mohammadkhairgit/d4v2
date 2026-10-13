@@ -23,8 +23,8 @@ namespace d4 {
    Initialize the data structure regarding the configuration (ie. number of
    variables, maximum number of clauses and the lenght of the largest clause).
 
-   @param[in] sizeFirstPage, the amount of bytes for the first page.
-   @param[in] sizeAdditionalPage, the amount of bytes for the additional pages.
+   @param[in] sizeFirstPage the amount of bytes for the first page.
+   @param[in] sizeAdditionalPage the amount of bytes for the additional pages.
 */
 void BucketAllocator::init(unsigned long sizeFirstPage,
                            unsigned long sizeAdditionalPage) {
@@ -49,7 +49,7 @@ void BucketAllocator::init(unsigned long sizeFirstPage,
    Get a pointer on an available array where we can store the data we want to
    save into the bucket.
 
-   @param[in] size, the size of the entry we want.
+   @param[in] size the size of the entry we want.
 
    \return a pointer on a memory block.
 */
@@ -110,8 +110,8 @@ char *BucketAllocator::getArray(unsigned size) {
    Release some memory of a given size and store this information in
    freespace.
 
-   @param[in] m, the memory we want to release
-   @param[in] size, the size of the memory block
+   @param[in] m the memory we want to release
+   @param[in] size the size of the memory block
 */
 void BucketAllocator::releaseMemory(char *m, unsigned size) {
   m_usedMemory -= size;

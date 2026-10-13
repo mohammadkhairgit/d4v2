@@ -95,13 +95,14 @@ private:
 
 public:
   /**
-     Function called in order to initialized variables before using
+     Function called in order to initialized variables before using the
+     BucketManagerAllCl.
 
-     @param[in] occM, the CNF occurrence manager
-     @param[in] cache, the cache the bucket is linked with.
-     @param[in] mdStore, the storing mode for the clause
-     @param[in] sizeFirstPage, the amount of bytes for the first page.
-     @param[in] sizeAdditionalPage, the amount of bytes for the additional
+     @param[in] occM the All occurrence manager
+     @param[in] cache the cache the bucket is linked with.
+     @param[in] mdStore the storing mode for the clause
+     @param[in] sizeFirstPage the amount of bytes for the first page.
+     @param[in] sizeAdditionalPage the amount of bytes for the additional
      pages.
   */
   BucketManagerAllCl(SpecManagerAll &occM, CacheManager<T> *cache,
@@ -162,8 +163,8 @@ public:
   /**
      It is used in order to construct a sorted residual formula.
 
-     @param[in] l, we considere the clause containing l
-     @param[out] inConstruction, place where we store the bucket in
+     @param[in] l we considere the clause containing l
+     @param[out] inConstruction place where we store the bucket in
      construction.
   */
   void createDistribWrTLit(const Lit &l, BucketInConstruction &inConstruction) {
@@ -244,8 +245,8 @@ public:
   /**
      Collect the clause distribution. The result is stored in distrib.
 
-     @param[in] component, the set of variables we consider.
-     @param[out] inConstruction, place where we store the bucket in
+     @param[in] component the set of variables we consider.
+     @param[out] inConstruction place where we store the bucket in
      construction.
 
      \return the number of elements we have in the distribution once the
@@ -268,7 +269,7 @@ public:
       m_markIdx[idx] = -1;
       inConstruction.shiftedSizeClause[b.start] =
           inConstruction.sizeClauses[idx];
-        // Store the semantic kind for the retained representative of this clause.
+      // Store the semantic kind for the retained representative of this clause.
       m_clauseKind[b.start] = static_cast<unsigned char>(
           this->m_specManager.getClause(idx)->kind());
       if (b.end != b.start + 1) {
@@ -302,7 +303,7 @@ public:
   /**
      Prepare the data to store a new bucket.
 
-     @param[out] inConstruction, place where we store the bucket in
+     @param[out] inConstruction place where we store the bucket in
      construction.
    */
   inline void initSortBucket(BucketInConstruction &inConstruction) {
@@ -370,9 +371,9 @@ public:
     ret.nbByteStoreFormula =
         (!cptDistrib)
             ? 0
-        : ret.nbByteStoreClauseKind +
-            1 + ((ret.nbBitStoreLit *
-              ((cptDistrib << 1) + cptLitFormula)) >> 3);
+            : ret.nbByteStoreClauseKind + 1 +
+                  ((ret.nbBitStoreLit * ((cptDistrib << 1) + cptLitFormula)) >>
+                   3);
 
     ret.totalByte = ret.nbByteStoreVar + ret.nbByteStoreFormula;
     return ret;
@@ -461,9 +462,9 @@ public:
       - m_sizeDistrib
       - m_distrib
 
-     @param[in] data, the place where we store the information
-     @param[in] component, is the set of variables.
-     @param[out] inConstruction, place where we store the bucket in
+     @param[in] data the place where we store the information
+     @param[in] component is the set of variables.
+     @param[out] inConstruction place where we store the bucket in
      construction.
 
      \return a pointer to the end of the data we added
@@ -543,9 +544,9 @@ public:
   /**
      Transfer the formula store in distib in a table given in parameter.
 
-     @param[in] component, the input variables.
-     @param[out] tmpFormula, the place where is stored the formula.
-     @param[out] szTmpFormula, to collect the size of the stored formula.
+     @param[in] component the input variables.
+     @param[out] tmpFormula the place where is stored the formula.
+     @param[out] szTmpFormula to collect the size of the stored formula.
   */
   inline void storeFormula(std::vector<Var> &component, CachedBucket<T> &b) {
     initSortBucket(m_inConstruction);

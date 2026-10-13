@@ -32,11 +32,11 @@
 #include "src/caching/CacheManager.hpp"
 #include "src/caching/CachedBucket.hpp"
 #include "src/caching/TmpEntry.hpp"
+#include "src/heuristics/ClauseScoringMethod.hpp"
 #include "src/heuristics/PartitioningHeuristic.hpp"
 #include "src/heuristics/PhaseHeuristic.hpp"
 #include "src/heuristics/ProjBackupHeuristic.hpp"
 #include "src/heuristics/ScoringMethod.hpp"
-#include "src/heuristics/ClauseScoringMethod.hpp"
 #include "src/preprocs/PreprocManager.hpp"
 #include "src/problem/ProblemManager.hpp"
 #include "src/problem/ProblemTypes.hpp"
@@ -69,20 +69,24 @@ class ProjDpllStyleMethod : public MethodManager, public Counter<T> {
 private:
   bool optDomConst;
   bool optReversePolarity;
+
+  // Logging variables
   unsigned m_failed_cuts = 0;
   unsigned m_nb_pure_lits = 0;
   unsigned m_nbCallCall;
   unsigned m_nbSplit;
   unsigned m_callPartitioner;
   unsigned m_nbDecisionNode;
-  unsigned m_optCached;
   unsigned m_nbNonBinaryDeterministOr;
   unsigned m_longestNonBinaryDeterministOrSequence;
   unsigned m_shortestNonBinaryDeterministOrSequence;
   unsigned m_nbNonBinaryDeterministOrSequences;
+  // Temporary variables used to compute some of the above logging variables
   unsigned m_currentNonBinaryDeterministOrSequence;
   bool m_lastNodeWasNonBinaryDeterministOr;
-  bool clauseScoringEnabled;
+
+  unsigned m_optCached;
+  bool m_clauseScoringEnabled;
   unsigned m_stampIdx;
   unsigned m_decay_frequency;
   bool m_isProjectedMode;
@@ -118,6 +122,7 @@ private:
   SpecManager *m_specs;
   ScoringMethod *m_hVar;
   PhaseHeuristic *m_hPhase;
+  // Clause scoring object
   ClauseScoringMethod *m_hClause;
   PartitioningHeuristic *m_hCutSet;
 
@@ -140,7 +145,7 @@ public:
   /**
      Constructor.
 
-     @param[in] config, the configuration.
+     @param[in] config the configuration.
    */
   ProjDpllStyleMethod(Config &config, std::string &meth, bool isFloat,
                       ProblemManager *initProblem, std::ostream &out,
@@ -173,15 +178,16 @@ public:
     m_hPhase =
         PhaseHeuristic::makePhaseHeuristic(config, *m_specs, *m_solver, m_out);
     if (config.alternative_input.empty())
-      clauseScoringEnabled = false;
+      m_clauseScoringEnabled = false;
     else
-      clauseScoringEnabled = true;
-    if (clauseScoringEnabled) {
-      m_hClause = ClauseScoringMethod::makeClauseScoringMethod(config, *m_specs, *m_hVar, m_out);
+      m_clauseScoringEnabled = true;
+    if (m_clauseScoringEnabled) {
+      m_hClause = ClauseScoringMethod::makeClauseScoringMethod(config, *m_specs,
+                                                               *m_hVar, m_out);
     } else {
       m_hClause = nullptr;
     }
-    
+
     m_isProjectedMode = true;
 
     // select the partitioner regarding if it projected model counting or not.
@@ -201,7 +207,7 @@ public:
         double(m_specs->nbSelected()) / double(m_specs->getNbVariable());
     double clause_var_ratio = double(m_specs->nbSelected()) /
                               ((SpecManagerCnf *)m_specs)->getNbClause();
-    if (projected_ratio < 0.10 | clause_var_ratio > 0.5 |
+    if ((projected_ratio < 0.10 | clause_var_ratio > 0.5) ||
         !config.alternative_input.empty()) {
       std::cout << "c [INFO] using PartitioningHeuristicNone" << std::endl;
       m_hCutSet = PartitioningHeuristic::makePartitioningHeuristicNone(m_out);
@@ -247,7 +253,7 @@ public:
     delete m_hPhase;
     delete m_hCutSet;
     delete m_cache;
-    if (clauseScoringEnabled)
+    if (m_clauseScoringEnabled)
       delete m_hClause;
   } // destructor
 
@@ -255,9 +261,9 @@ private:
   /**
      Expel from a set of variables the ones they are marked as being decidable.
 
-     @param[out] vars, the set of variables we search to filter.
+     @param[out] vars the set of variables we search to filter.
 
-     @param[in] isDecisionvariable, a boolean vector that marks as true decision
+     @param[in] isDecisionvariable a boolean vector that marks as true decision
      variables.
    */
   void expelNoDecisionVar(std::vector<Var> &vars) {
@@ -272,9 +278,9 @@ private:
   /**
      Expel from a set of variables the ones they are marked as being decidable.
 
-     @param[out] lits, the set of literals we search to filter.
+     @param[out] lits the set of literals we search to filter.
 
-     @param[in] isDecisionvariable, a boolean vector that marks as true decision
+     @param[in] isDecisionvariable a boolean vector that marks as true decision
      variables.
    */
   void expelNoDecisionLit(std::vector<Lit> &lits) {
@@ -291,9 +297,9 @@ private:
   /**
      Compute the current priority set.
 
-     @param[in] connected, the current component.
-     @param[in] priorityVar, the current priority variables.
-     @param[out] currPriority, the intersection of the two previous sets.
+     @param[in] connected the current component.
+     @param[in] priorityVar the current priority variables.
+     @param[out] currPriority the intersection of the two previous sets.
   */
   inline void computePrioritySubSet(std::vector<Var> &connected,
                                     std::vector<Var> &priorityVar,
@@ -310,7 +316,7 @@ private:
   /**
      Print out information about the solving process.
 
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
   */
   inline void showInter(std::ostream &out) {
     out << "c " << std::fixed << std::setprecision(2) << "|"
@@ -332,7 +338,7 @@ private:
   /**
      Print out a line of dashes.
 
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
    */
   inline void separator(std::ostream &out) {
     out << "c ";
@@ -344,7 +350,7 @@ private:
   /**
      Print out the header information.
 
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
   */
   inline void showHeader(std::ostream &out) {
     separator(out);
@@ -367,7 +373,7 @@ private:
   /**
      Print out information when it is requiered.
 
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
    */
   inline void showRun(std::ostream &out) {
     if (!(m_nbCallCall & (MASK_HEADER)))
@@ -379,7 +385,7 @@ private:
   /**
      Print out the final stat.
 
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
    */
   inline void printFinalStats(std::ostream &out) {
     separator(out);
@@ -426,7 +432,7 @@ private:
      Initialize the assumption in order to compute compiled formula under this
      one.
 
-     @param[in] assums, the assumption
+     @param[in] assums the assumption
   */
   inline void initAssumption(std::vector<Lit> &assums) {
     m_solver->restart();
@@ -446,10 +452,10 @@ private:
   /**
      Call the CNF formula into a FBDD.
 
-     @param[in] setOfVar, the current set of considered variables
-     @param[in] unitsLit, the set of unit literal detected at this level
-     @param[in] freeVariable, the variables which become free
-     @param[in] out, the stream we use to print out information.
+     @param[in] setOfVar the current set of considered variables
+     @param[in] unitsLit the set of unit literal detected at this level
+     @param[in] freeVariable the variables which become free
+     @param[in] out the stream we use to print out information.
 
      \return an element of type U that sums up the given CNF sub-formula using a
      DPLL style algorithm with an operation manager.
@@ -592,12 +598,14 @@ private:
   /**
      Should Return true if a not yet satisfied alternative clause that is still
      relevent exist in the current connected component, otherwise return false.
-     With relevance we mean that it contain decidable variables still.
+     "Relevent" depend on the clause scoring method used. But this method should
+     always return false , if their is no more alternative clause in the current
+     connected component.
 
      @param[in] connected the current connected component.
      @param[out] clause the literals of the selected alternative clause.
 
-     \return true if a not yet satisfied alternative clause was found.
+     \return true if a relevant alternative clause was found.
   */
   inline bool AlternativeOrVariableBranch(std::vector<Var> &connected,
                                           std::vector<Lit> &clause) {
@@ -608,8 +616,8 @@ private:
   /**
      This function select a variable and compile a decision node.
 
-     @param[in] connected, the set of variable present in the current problem.
-     @param[in] out, the stream whare are printed out the logs.
+     @param[in] connected the set of variable present in the current problem.
+     @param[in] out the stream whare are printed out the logs.
 
      \return the compiled formula.
   */
@@ -625,9 +633,11 @@ private:
         break;
     }
 
-    if (!hasPriority &&
-        clauseScoringEnabled &&
-        AlternativeOrVariableBranch(connected.vars, original_alternativeClause)) {
+    // Branch on an alternative clause.
+    if (!hasPriority && m_clauseScoringEnabled &&
+        AlternativeOrVariableBranch(connected.vars,
+                                    original_alternativeClause)) {
+      // update statistics
       unsigned parentSequenceLength = m_currentNonBinaryDeterministOrSequence;
       m_nbNonBinaryDeterministOr++;
       if (m_lastNodeWasNonBinaryDeterministOr) {
@@ -645,7 +655,8 @@ private:
       vector<Lit> alternativeClause;
       std::vector<Lit> undecidableLiterals = {};
       std::vector<Lit> decidableLiterals = {};
-
+      // find literals that are not assigned yet in the alternative clause, to
+      // only branch on them.
       for (auto &l : original_alternativeClause) {
         if (!m_solver->varIsAssigned(l.var()) && m_specs->isSelected(l.var())) {
           alternativeClause.push_back(l);
@@ -660,9 +671,11 @@ private:
 
       std::vector<DataBranch<U>> branches;
       branches.reserve(alternativeClause.size());
+      // Branch on the originally not decided variables of the alternative
+      // clause.
       for (unsigned i = 0; i < alternativeClause.size(); i++) {
         Lit l = alternativeClause[i];
-        
+
         m_solver->pushAssumption(l);
         branches.push_back(DataBranch<U>());
         branches.back().d = compute_(connected, branches.back().unitLits,
@@ -671,8 +684,8 @@ private:
         m_currentNonBinaryDeterministOrSequence = parentSequenceLength + 1;
         m_lastNodeWasNonBinaryDeterministOr = true;
       }
-      // case we have undecidable literals, all can be covered in one
-      // branch.
+      // case we have undecidable literals, we need one branch that cover them
+      // all by setting all other decidable literals to false.
       if (!undecidableLiterals.empty()) {
         for (unsigned j = 0; j < decidableLiterals.size(); j++) {
           m_solver->pushAssumption(decidableLiterals[j].neg());
@@ -744,17 +757,22 @@ private:
     m_solver->pushAssumption(l);
     b[0].d = compute_(connected, b[0].unitLits, b[0].freeVars, out);
     m_solver->popAssumption();
+    // update statistics temporary variables
     m_lastNodeWasNonBinaryDeterministOr = false;
     m_currentNonBinaryDeterministOrSequence = 0;
 
     if (m_solver->isInAssumption(l))
       b[1].d = m_operation->manageBottom();
-    else if (m_solver->isInAssumption(~l))
+    else if (m_solver->isInAssumption(~l)) {
       b[1].d = compute_(connected, b[1].unitLits, b[1].freeVars, out);
-    else {
+      // update statistics temporary variables
+      m_lastNodeWasNonBinaryDeterministOr = false;
+      m_currentNonBinaryDeterministOrSequence = 0;
+    } else {
       m_solver->pushAssumption(~l);
       b[1].d = compute_(connected, b[1].unitLits, b[1].freeVars, out);
       m_solver->popAssumption();
+      // update statistics temporary variables
       m_lastNodeWasNonBinaryDeterministOr = false;
       m_currentNonBinaryDeterministOrSequence = 0;
     }
@@ -766,9 +784,9 @@ private:
   /**
      Compute U using the trace of a SAT solver.
 
-     @param[in] setOfVar, the set of variables of the considered problem.
-     @param[in] out, the stream are is print out the logs.
-     @param[in] warmStart, to activate/deactivate the warm start strategy.
+     @param[in] setOfVar the set of variables of the considered problem.
+     @param[in] out the stream are is print out the logs.
+     @param[in] warmStart to activate/deactivate the warm start strategy.
      /!\ When the warm start is activated the assumptions are reset.
 
      \return an element of type U that sums up the given CNF formula using a
@@ -805,9 +823,9 @@ public:
      from the query strategy, where we first compute and then condition the
      computed structure.
 
-     @param[in] setOfVar, the set of variables of the considered problem.
-     @param[in] assumption, the set of literals we want to assign.
-     @param[in] out, the stream where are print out the log.
+     @param[in] setOfVar the set of variables of the considered problem.
+     @param[in] assumption the set of literals we want to assign.
+     @param[in] out the stream where are print out the log.
 
      \return the number of models when the formula is simplified by the given
      assumption.
@@ -837,7 +855,7 @@ public:
   /**
      Run the DPLL style algorithm with the operation manager.
 
-     @param[in] vm, the set of options.
+     @param[in] vm the set of options.
    */
   void run(Config &config) {
     ProjVars setOfVar;

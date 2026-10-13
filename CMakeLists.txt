@@ -40,11 +40,6 @@ include_directories(${arjun_INCLUDE_DIR})
 include_directories(${GMPC_INCLUDE_DIR})
 include_directories(${glucose_INCLUDE_DIRS})
 
-set_source_files_properties(
-    src/methods/MethodManager.cpp
-    PROPERTIES COMPILE_OPTIONS "-O0;-g3;-fno-inline"
-)
-
 add_library(caching OBJECT
     src/caching/BucketAllocator.cpp
     src/caching/cnf/BucketInConstruction.cpp

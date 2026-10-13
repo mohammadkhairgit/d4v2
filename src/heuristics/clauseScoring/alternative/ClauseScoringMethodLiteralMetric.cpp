@@ -6,82 +6,17 @@
 
 namespace d4 {
 
-namespace {
-
-double calculateMedian(const std::vector<double> &values, std::size_t begin,
-                       std::size_t end) {
-  if (begin >= end) {
-    return 0.0;
-  }
-
-  const std::size_t length = end - begin;
-  const std::size_t middle = begin + length / 2;
-  if (length % 2 == 0) {
-    return (values[middle - 1] + values[middle]) / 2.0;
-  }
-
-  return values[middle];
-}
-
-std::vector<double> sortedCopy(const std::vector<double> &values) {
-  std::vector<double> sortedValues = values;
-  std::sort(sortedValues.begin(), sortedValues.end());
-  return sortedValues;
-}
-
-} // namespace
-
-double calculateVariance(const std::vector<double> &values) {
-  if (values.empty()) {
-    return 0.0;
-  }
-
-  const double sum = std::accumulate(values.begin(), values.end(), 0.0);
-  const double mean = sum / static_cast<double>(values.size());
-
-  double squaredDistanceSum = 0.0;
-  for (const double value : values) {
-    const double distance = value - mean;
-    squaredDistanceSum += distance * distance;
-  }
-
-  return squaredDistanceSum / static_cast<double>(values.size());
-}
-
-double calculateStandardDeviation(const std::vector<double> &values) {
-  return std::sqrt(calculateVariance(values));
-}
-
-double calculateLowerQuartile(const std::vector<double> &values) {
-  if (values.empty()) {
-    return 0.0;
-  }
-
-  const std::vector<double> sortedValues = sortedCopy(values);
-  const std::size_t half = sortedValues.size() / 2;
-  return calculateMedian(sortedValues, 0, half);
-}
-
-double calculateUpperQuartile(const std::vector<double> &values) {
-  if (values.empty()) {
-    return 0.0;
-  }
-
-  const std::vector<double> sortedValues = sortedCopy(values);
-  const std::size_t half = sortedValues.size() / 2;
-  const std::size_t upperBegin =
-      (sortedValues.size() % 2 == 0) ? half : half + 1;
-  return calculateMedian(sortedValues, upperBegin, sortedValues.size());
-}
-
 double ClauseScoringMethodLiteralMetric::getBestScoreClause(
     std::vector<Var> &connected, std::vector<Lit> &clause) {
   std::vector<unsigned> idxClauses;
   csm_specManager.getCurrentClausesByKind(idxClauses, connected,
                                           ClauseKind::Alternative);
 
+  // true if a clause was found, false otherwise.
   bool foundClause = false;
   ClauseScores bestClauseScore;
+  // iterate through all current clauses and return the clause with the best
+  // score.
   for (auto idx : idxClauses) {
     const ClauseType &currentClause = csm_specManager.getClause(idx);
     if (!currentClause.isStillRelevant()) {
@@ -95,7 +30,9 @@ double ClauseScoringMethodLiteralMetric::getBestScoreClause(
       bestClauseScore.literalCompareScore = current.literalCompareScore;
       bestClauseScore.nbBranches = current.nbBranches;
       clause = currentClause.getLiterals();
-    } else if (current.clauseCompareScore == bestClauseScore.clauseCompareScore &&
+      // prefer clauses with fewer branches.
+    } else if (current.clauseCompareScore ==
+                   bestClauseScore.clauseCompareScore &&
                current.nbBranches < bestClauseScore.nbBranches) {
       bestClauseScore.clauseCompareScore = current.clauseCompareScore;
       bestClauseScore.literalCompareScore = current.literalCompareScore;
@@ -124,6 +61,8 @@ ClauseScoringMethodLiteralMetric::ClauseScores
 ClauseScoringMethodLiteralMin::computeClauseScore(const ClauseType &clause) {
   double remainingDecidableVars =
       static_cast<double>(clause.hasRemainingProjectedVars());
+  // Do we have projected variables (do we need a branch for projected
+  // variables)?
   double nonProjectedBranch =
       static_cast<double>(0 < clause.getNbNonProjectedVars());
   double numberOfBranches = remainingDecidableVars + nonProjectedBranch;
@@ -156,6 +95,8 @@ ClauseScoringMethodLiteralMetric::ClauseScores
 ClauseScoringMethodBranchMin::computeClauseScore(const ClauseType &clause) {
   double remainingDecidableVars =
       static_cast<double>(clause.hasRemainingProjectedVars());
+  // Do we have projected variables (do we need a branch for projected
+  // variables)?
   double nonProjectedBranch =
       static_cast<double>(0 < clause.getNbNonProjectedVars());
   double numberOfBranches = remainingDecidableVars + nonProjectedBranch;
@@ -165,26 +106,19 @@ ClauseScoringMethodBranchMin::computeClauseScore(const ClauseType &clause) {
     return clauseScore;
 
   std::vector<double> literalScores(1, 0.0);
-  std::vector<double> projectedLiteralScores(1, 0.0);
   // std::vector<double> branchesScores;
 
   for (const auto &lit : clause.getLiterals()) {
-    if (csm_specManager.litIsAssigned(lit))
+    if (skipLiteralScoring(lit))
       continue;
-    if (csm_specManager.nbSelected() && csm_specManager.isProj() &&
-        !csm_specManager.isSelected(lit.var())) {
-      projectedLiteralScores.push_back(
-          csm_scoringMethod.computeScore(lit.var()));
-      projectedLiteralScores.push_back(
-          csm_scoringMethod.computeScore((~lit).var()));
-    }
     literalScores.push_back(csm_scoringMethod.computeScore(lit.var()));
     literalScores.push_back(csm_scoringMethod.computeScore((~lit).var()));
   }
 
-  double score = 0;
   assert((literalScores.size() - 1) / 2 == clause.hasRemainingProjectedVars());
   double minimalBranchScore = -1;
+  // For each branch compute its score by summing over the one positive literal
+  // to be set and all the other negative literals to be set.
   for (int i = 0; i < numberOfBranches; ++i) {
     double branchScore = 0;
     branchScore += literalScores[1 + 2 * i];
@@ -194,22 +128,15 @@ ClauseScoringMethodBranchMin::computeClauseScore(const ClauseType &clause) {
         branchScore += literalScores[j + 1];
       }
     }
-    // branchesScores.push_back(branchScore);
-    score += branchScore;
     minimalBranchScore = minimalBranchScore < 0
                              ? branchScore
                              : std::min(minimalBranchScore, branchScore);
   }
 
-  // return the avg score over the to be created branches divided by the
-  // standard deviation of the scores double stddev =
-  // calculateStandardDeviation(std::vector<double>(branchesScores.begin(),
-  // branchesScores.end()));
   clauseScore.clauseCompareScore = minimalBranchScore;
   clauseScore.literalCompareScore = minimalBranchScore;
   clauseScore.nbBranches = numberOfBranches;
-  // In case all branches have almost (or exactly) the same score, then ignore
-  // the stddev.
+
   return clauseScore;
 }
 
@@ -217,6 +144,8 @@ ClauseScoringMethodLiteralMetric::ClauseScores
 ClauseScoringMethodBranchMax::computeClauseScore(const ClauseType &clause) {
   double remainingDecidableVars =
       static_cast<double>(clause.hasRemainingProjectedVars());
+  // Do we have non-projected variables (do we need a branch for non-projected
+  // variables)?
   double nonProjectedBranch =
       static_cast<double>(0 < clause.getNbNonProjectedVars());
   double numberOfBranches = remainingDecidableVars + nonProjectedBranch;
@@ -226,26 +155,19 @@ ClauseScoringMethodBranchMax::computeClauseScore(const ClauseType &clause) {
     return clauseScore;
 
   std::vector<double> literalScores(1, 0.0);
-  std::vector<double> projectedLiteralScores(1, 0.0);
   // std::vector<double> branchesScores;
 
   for (const auto &lit : clause.getLiterals()) {
-    if (csm_specManager.litIsAssigned(lit))
+    if (skipLiteralScoring(lit))
       continue;
-    if (csm_specManager.nbSelected() && csm_specManager.isProj() &&
-        !csm_specManager.isSelected(lit.var())) {
-      projectedLiteralScores.push_back(
-          csm_scoringMethod.computeScore(lit.var()));
-      projectedLiteralScores.push_back(
-          csm_scoringMethod.computeScore((~lit).var()));
-    }
     literalScores.push_back(csm_scoringMethod.computeScore(lit.var()));
     literalScores.push_back(csm_scoringMethod.computeScore((~lit).var()));
   }
 
-  double score = 0;
   assert((literalScores.size() - 1) / 2 == clause.hasRemainingProjectedVars());
   double maximalBranchScore = -1;
+  // For each branch compute its score by summing over the one positive literal
+  // to be set and all the other negative literals to be set.
   for (int i = 0; i < numberOfBranches; ++i) {
     double branchScore = 0;
     branchScore += literalScores[1 + 2 * i];
@@ -255,22 +177,15 @@ ClauseScoringMethodBranchMax::computeClauseScore(const ClauseType &clause) {
         branchScore += literalScores[j + 1];
       }
     }
-    // branchesScores.push_back(branchScore);
-    score += branchScore;
     maximalBranchScore = maximalBranchScore < 0
                              ? branchScore
                              : std::max(maximalBranchScore, branchScore);
   }
 
-  // return the avg score over the to be created branches divided by the
-  // standard deviation of the scores double stddev =
-  // calculateStandardDeviation(std::vector<double>(branchesScores.begin(),
-  // branchesScores.end()));
   clauseScore.clauseCompareScore = maximalBranchScore;
   clauseScore.literalCompareScore = maximalBranchScore;
   clauseScore.nbBranches = numberOfBranches;
-  // In case all branches have almost (or exactly) the same score, then ignore
-  // the stddev.
+
   return clauseScore;
 }
 
@@ -278,6 +193,8 @@ ClauseScoringMethodLiteralMetric::ClauseScores
 ClauseScoringMethodLiteralMax::computeClauseScore(const ClauseType &clause) {
   double remainingDecidableVars =
       static_cast<double>(clause.hasRemainingProjectedVars());
+  // Do we have projected variables (do we need a branch for projected
+  // variables)?
   double nonProjectedBranch =
       static_cast<double>(0 < clause.getNbNonProjectedVars());
   double numberOfBranches = remainingDecidableVars + nonProjectedBranch;
@@ -311,6 +228,8 @@ ClauseScoringMethodLiteralMetric::ClauseScores
 ClauseScoringMethodLiteralSum::computeClauseScore(const ClauseType &clause) {
   double remainingDecidableVars =
       static_cast<double>(clause.hasRemainingProjectedVars());
+  // Do we have projected variables (do we need a branch for projected
+  // variables)?
   double nonProjectedBranch =
       static_cast<double>(0 < clause.getNbNonProjectedVars());
   double numberOfBranches = remainingDecidableVars + nonProjectedBranch;
@@ -346,6 +265,8 @@ ClauseScoringMethodLiteralSumOverBranchAvg::computeClauseScore(
     const ClauseType &clause) {
   double remainingDecidableVars =
       static_cast<double>(clause.hasRemainingProjectedVars());
+  // Do we have projected variables (do we need a branch for projected
+  // variables)?
   double nonProjectedBranch =
       static_cast<double>(0 < clause.getNbNonProjectedVars());
   double numberOfBranches = remainingDecidableVars + nonProjectedBranch;
@@ -371,73 +292,6 @@ ClauseScoringMethodLiteralSumOverBranchAvg::computeClauseScore(
   clauseScore.literalCompareScore = score / numberOfBranches;
   clauseScore.nbBranches = numberOfBranches;
   // return the avg score over the to be created branches
-  return clauseScore;
-}
-
-/**
- * TODO: The vector should be branches scoring not literals scoring
- * TODO: check if upper and lower quartile are correct and then use them somehow
- */
-ClauseScoringMethodLiteralMetric::ClauseScores
-ClauseScoringMethodBranchesAvgDividedByDistribution::computeClauseScore(
-    const ClauseType &clause) {
-  double remainingDecidableVars =
-      static_cast<double>(clause.hasRemainingProjectedVars());
-  double nonProjectedBranch =
-      static_cast<double>(0 < clause.getNbNonProjectedVars());
-  double numberOfBranches = remainingDecidableVars + nonProjectedBranch;
-  ClauseScores clauseScore;
-  // if their is only the projected variables branch.
-  if (numberOfBranches < 2)
-    return clauseScore;
-
-  std::vector<double> literalScores(1, 0.0);
-  std::vector<double> projectedLiteralScores(1, 0.0);
-  std::vector<double> branchesScores;
-
-  for (const auto &lit : clause.getLiterals()) {
-    if (csm_specManager.litIsAssigned(lit))
-      continue;
-    if (csm_specManager.nbSelected() && csm_specManager.isProj() &&
-        !csm_specManager.isSelected(lit.var())) {
-      projectedLiteralScores.push_back(
-          csm_scoringMethod.computeScore(lit.var()));
-      projectedLiteralScores.push_back(
-          csm_scoringMethod.computeScore((~lit).var()));
-    }
-    literalScores.push_back(csm_scoringMethod.computeScore(lit.var()));
-    literalScores.push_back(csm_scoringMethod.computeScore((~lit).var()));
-  }
-
-  double score = 0;
-  assert((literalScores.size() - 1) / 2 == clause.hasRemainingProjectedVars());
-  for (int i = 0; i < numberOfBranches; ++i) {
-    double branchScore = 0;
-    branchScore += literalScores[1 + 2 * i];
-    for (std::size_t j = 1; j + 1 < literalScores.size(); j += 2) {
-      // For the last branch (projected branch) this if should always be true.
-      if (j != 1 + 2 * i) {
-        branchScore += literalScores[j + 1];
-      }
-    }
-    branchesScores.push_back(branchScore);
-    score += branchScore;
-  }
-
-  // return the avg score over the to be created branches divided by the
-  // standard deviation of the scores
-  double stddev = calculateStandardDeviation(
-      std::vector<double>(branchesScores.begin(), branchesScores.end()));
-  assert(stddev >= 0);
-  clauseScore.clauseCompareScore = stddev > 1
-                                       ? score / (numberOfBranches * stddev)
-                                       : score / numberOfBranches;
-  clauseScore.literalCompareScore = stddev > 1
-                                        ? score / (numberOfBranches * stddev)
-                                        : score / numberOfBranches;
-  clauseScore.nbBranches = numberOfBranches;
-  // In case all branches have almost (or exactly) the same score, then ignore
-  // the stddev.
   return clauseScore;
 }
 

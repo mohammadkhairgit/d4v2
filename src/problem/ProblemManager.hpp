@@ -24,8 +24,8 @@
 #include "src/problem/ProblemTypes.hpp"
 
 namespace d4 {
-// This class only contains information about the variables but nothing about
-// the formula itself.
+// This base class only contains information about the variables but nothing
+// about the formula itself.
 class ProblemManager {
 protected:
   // Number of variables in the problem.
@@ -33,14 +33,14 @@ protected:
   unsigned m_nbFreeVars;
   // The weight of each literal in case of weighted Problem. indexing start with
   // 2 for variable number 1 in its positive literal and 3 for its negative
-  // literal. meaning indexes number 0 and one in m_weightLit are not used.
+  // literal. meaning indexes number 0 and 1 in m_weightLit are not used.
   std::vector<double> m_weightLit;
   // The weight of each variable in case of weighted Problem. Index 0 is not
   // used
   std::vector<double> m_weightVar;
   /*
   projected variables, variable that are allowed to be branched on through
-  choices. Not variable that have been branched on until certain point
+  choices. Not variable that have already been decided
    */
   std::vector<Var> m_selected;
   std::vector<Var> m_maxVar;

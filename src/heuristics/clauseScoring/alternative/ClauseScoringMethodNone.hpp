@@ -3,6 +3,7 @@
 #include <src/heuristics/ClauseScoringMethod.hpp>
 
 namespace d4 {
+// Never select a clause, always return false.
 class ClauseScoringMethodNone final : public ClauseScoringMethod {
 public:
   ClauseScoringMethodNone(SpecManagerAll &specManager,

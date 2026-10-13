@@ -28,6 +28,8 @@
 #include "src/exceptions/FactoryException.hpp"
 #include "src/utils/AtMost1Extractor.hpp"
 
+#include <src/specs/cnf/SpecManagerAll.hpp>
+
 namespace d4 {
 
 /**
@@ -88,6 +90,16 @@ PartitioningHeuristic *PartitioningHeuristic::makePartitioningHeuristic(
           new PartitioningHeuristicStaticMulti(config, ws, s, out);
       ret->init(out);
       return ret;
+    }
+  } else if ((config.input_type == "cnf" || config.input_type == "dimacs") &&
+             !config.alternative_input.empty()) {
+    try {
+      SpecManagerAll &ps = dynamic_cast<SpecManagerAll &>(s);
+      out << "c [CONSTRUCTOR] Partitioner manager: none\n";
+      return new PartitioningHeuristicNone();
+    } catch (std::bad_cast &bc) {
+      std::cerr << "bad_cast caught: " << bc.what() << '\n';
+      std::cerr << "A mixed formula was expeted\n";
     }
   }
 

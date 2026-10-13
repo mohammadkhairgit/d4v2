@@ -22,7 +22,20 @@ public:
    * Destructor for the ClauseScoringMethod.
    */
   virtual ~ClauseScoringMethod() { ; }
+  /**
+   * Computes the score of a clause.
+   *
+   * @param[in] clause the clause to score.
+   * @return the score of the clause.
+   */
   virtual double computeScore(const ClauseType &clause) = 0;
+  /**
+   * Gets the best score of a clause.
+   *
+   * @param[in] connected the current connected component.
+   * @param[out] clause the clause with the best score.
+   * @return the best score of the clause.
+   */
   virtual double getBestScoreClause(std::vector<Var> &connected,
                                     std::vector<Lit> &clause) = 0;
 
@@ -31,8 +44,10 @@ public:
    * selected and pass the clause back.
    *
    * @param[in] connected the current connected component.
-   * @param[in] specManager the spec manager of the current problem.
    * @param[out] clause the selected clause.
+   * @param[in] ClauseIfAvailable if true, return true if a clause with higher
+   * score than 0 was found, otherwise only return true if the found clause has
+   * a higher score than the best literal.
    * @return true if a clause was selected, false otherwise.
    */
   bool selectClause(std::vector<Var> &connected, std::vector<Lit> &clause,

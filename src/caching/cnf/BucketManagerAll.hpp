@@ -48,13 +48,13 @@ public:
   /**
      Constructor.
 
-     @param[in] occM, the CNF occurrence manager.
-     @param[in] cache, the cache the bucket is linked with.
-     @param[in] mdStore, the storing mode for the clause.
-     @param[in] sizeFirstPage, the amount of bytes for the first page.
-     @param[in] sizeAdditionalPage, the amount of bytes for the additional
+     @param[in] occM the All occurrence manager.
+     @param[in] cache the cache the bucket is linked with.
+     @param[in] mdStore the storing mode for the clause.
+     @param[in] sizeFirstPage the amount of bytes for the first page.
+     @param[in] sizeAdditionalPage the amount of bytes for the additional
      pages.
-     @param[in] bucketAllocator, a bucket allocator.
+     @param[in] bucketAllocator a bucket allocator.
   */
   BucketManagerAll(SpecManagerAll &occM, CacheManager<T> *cache,
                    ModeStore mdStore, unsigned long sizeFirstPage,
@@ -80,7 +80,7 @@ public:
      Tell if the clause given as parameter (which is represented by its index in
      the spec manager) should be considered or not.
 
-     @param[in] idx, the index of the clause.
+     @param[in] idx the index of the clause.
 
      \return true if the clause is kept, false otherwise.
    */
@@ -99,8 +99,8 @@ public:
      Get the clauses that will be used, that are the clause that respect the
      modeStore.
 
-     @param[in] component, the variables in the current component.
-     @param[out] idxClauses, the resulting clauses (index).
+     @param[in] component the variables in the current component.
+     @param[out] idxClauses the resulting clauses (index).
   */
   void collectIdActiveClauses(std::vector<Var> &component,
                               std::vector<unsigned> &idxClauses) {

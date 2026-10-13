@@ -54,39 +54,26 @@ template <class T> class Counter;
 template <class T, class U>
 class DpllStyleMethod : public MethodManager, public Counter<T> {
 private:
-
-  // inline void printstuff() {
-  //   if (number_of_choices % 10000000 == 0) {
-  //     std::cout << "current assignment: ";
-  //     for (Var v = 1; v <= m_specs->getNbVariable(); v++) {
-  //       if (!m_solver->varIsAssigned(v))
-  //         continue;
-
-  //       bool isFalse = m_solver->getModelVar(v) == l_False;
-  //       std::cout << Lit::makeLit(v, isFalse).human() << " ";
-  //     }
-  //     std::cout << std::endl;
-  //     number_of_choices = 0;
-  //   }
-  // }
-
-
   bool optDomConst;
   bool optReversePolarity;
 
-  // Number of recursive calls, only used for logging
+  // Logging variables
   unsigned m_nbCallCall;
   unsigned m_nbSplit;
   unsigned m_callPartitioner;
   unsigned m_nbDecisionNode;
-  unsigned m_optCached;
   unsigned m_nbNonBinaryDeterministOr;
   unsigned m_longestNonBinaryDeterministOrSequence;
   unsigned m_shortestNonBinaryDeterministOrSequence;
   unsigned m_nbNonBinaryDeterministOrSequences;
+
+  // Temporary variables used to compute some of the above logging variables
   unsigned m_currentNonBinaryDeterministOrSequence;
   bool m_lastNodeWasNonBinaryDeterministOr;
-  bool clauseScoringEnabled;
+
+  // Cache on/off
+  unsigned m_optCached;
+  bool m_clauseScoringEnabled;
   unsigned m_stampIdx;
   bool m_isProjectedMode;
 
@@ -103,6 +90,7 @@ private:
   WrapperSolver *m_solver;
   SpecManager *m_specs;
   ScoringMethod *m_hVar;
+  // Clause scoring object
   ClauseScoringMethod *m_hClause;
   PhaseHeuristic *m_hPhase;
   PartitioningHeuristic *m_hCutSet;
@@ -114,13 +102,11 @@ private:
 
   Operation<T, U> *m_operation;
 
-  // int number_of_choices = 0;
-
 public:
   /**
      Constructor.
 
-     @param[in] config, the configuration.
+     @param[in] config the configuration.
    */
   DpllStyleMethod(Config &config, std::string &meth, bool isFloat,
                   ProblemManager *initProblem, std::ostream &out,
@@ -151,10 +137,10 @@ public:
     m_hPhase =
         PhaseHeuristic::makePhaseHeuristic(config, *m_specs, *m_solver, m_out);
     if (config.alternative_input.empty())
-      clauseScoringEnabled = false;
+      m_clauseScoringEnabled = false;
     else
-      clauseScoringEnabled = true;
-    if (clauseScoringEnabled) {
+      m_clauseScoringEnabled = true;
+    if (m_clauseScoringEnabled) {
       m_hClause = ClauseScoringMethod::makeClauseScoringMethod(config, *m_specs,
                                                                *m_hVar, m_out);
     } else {
@@ -172,9 +158,6 @@ public:
     // select the partitioner regarding if it projected model counting or not.
     if ((m_isProjectedMode = m_problem->getNbSelectedVar())) {
       m_out << "c [MODE] projected\n";
-      m_hCutSet = PartitioningHeuristic::makePartitioningHeuristicNone(m_out);
-    } else if (!config.alternative_input.empty()) {
-      m_out << "c [MODE] alternative case will use no partitioning\n";
       m_hCutSet = PartitioningHeuristic::makePartitioningHeuristicNone(m_out);
     } else {
       m_out << "c [MODE] classic\n";
@@ -221,7 +204,7 @@ public:
     delete m_hPhase;
     delete m_hCutSet;
     delete m_cache;
-    if (clauseScoringEnabled)
+    if (m_clauseScoringEnabled)
       delete m_hClause;
   } // destructor
 
@@ -229,9 +212,9 @@ private:
   /**
      Expel from a set of variables the ones they are marked as being decidable.
 
-     @param[out] vars, the set of variables we search to filter.
+     @param[out] vars the set of variables we search to filter.
 
-     @param[in] isDecisionvariable, a boolean vector that marks as true decision
+     @param[in] isDecisionvariable a boolean vector that marks as true decision
      variables.
    */
   void expelNoDecisionVar(std::vector<Var> &vars,
@@ -249,9 +232,9 @@ private:
   /**
      Expel from a set of variables the ones they are marked as being decidable.
 
-     @param[out] lits, the set of literals we search to filter.
+     @param[out] lits the set of literals we search to filter.
 
-     @param[in] isDecisionvariable, a boolean vector that marks as true decision
+     @param[in] isDecisionvariable a boolean vector that marks as true decision
      variables.
    */
   void expelNoDecisionLit(std::vector<Lit> &lits,
@@ -269,9 +252,9 @@ private:
   /**
      Compute the current priority set.
 
-     @param[in] connected, the current component.
-     @param[in] priorityVar, the current priority variables.
-     @param[out] currPriority, the intersection of the two previous sets.
+     @param[in] connected the current component.
+     @param[in] priorityVar the current priority variables.
+     @param[out] currPriority the intersection of the two previous sets.
   */
   inline void computePrioritySubSet(std::vector<Var> &connected,
                                     std::vector<Var> &priorityVar,
@@ -288,7 +271,7 @@ private:
   /**
      Print out information about the solving process.
 
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
   */
   inline void showInter(std::ostream &out) {
     out << "c " << std::fixed << std::setprecision(2) << "|"
@@ -306,7 +289,7 @@ private:
   /**
      Print out a line of dashes.
 
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
    */
   inline void separator(std::ostream &out) {
     out << "c ";
@@ -318,7 +301,7 @@ private:
   /**
      Print out the header information.
 
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
   */
   inline void showHeader(std::ostream &out) {
     separator(out);
@@ -338,7 +321,7 @@ private:
   /**
      Print out information when it is requiered.
 
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
    */
   inline void showRun(std::ostream &out) {
     if (!(m_nbCallCall & (MASK_HEADER)))
@@ -350,7 +333,7 @@ private:
   /**
      Print out the final stat.
 
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
    */
   inline void printFinalStats(std::ostream &out) {
     separator(out);
@@ -383,7 +366,7 @@ private:
      Initialize the assumption in order to compute compiled formula under this
      one.
 
-     @param[in] assums, the assumption
+     @param[in] assums the assumption
   */
   inline void initAssumption(std::vector<Lit> &assums) {
     m_solver->restart();
@@ -400,6 +383,8 @@ private:
     return m_cache->isActivated(connected.size());
   } // cacheIsActivated
 
+  // Close the current non-binary deterministic OR sequence and update the
+  // shortest sequence if needed.
   inline void finishNonBinaryDeterministOrSequence() {
     if (m_currentNonBinaryDeterministOrSequence > 0 &&
         (m_shortestNonBinaryDeterministOrSequence == 0 ||
@@ -414,11 +399,11 @@ private:
   /**
      Call the CNF formula into a FBDD.
 
-     @param[in] setOfVar, the current set of considered variables
-     @param[in] unitsLit, the set of unit literal detected at this level
-     @param[in] freeVariable, the variables which become free. Do not appear in
+     @param[in] setOfVar the current set of considered variables
+     @param[in] unitsLit the set of unit literal detected at this level
+     @param[in] freeVariable the variables which become free. Do not appear in
      the current formula, because all their clauses are already true.
-     @param[in] out, the stream we use to print out information.
+     @param[in] out the stream we use to print out information.
 
      \return an element of type U that sums up the given CNF sub-formula using a
      DPLL style algorithm with an operation manager.
@@ -436,19 +421,10 @@ private:
     }
 
     m_solver->whichAreUnits(setOfVar, unitsLit); // collect unit literals
-    // std::ofstream unitLog("DpllStyleMethod_units.txt", std::ios::app);
-    // unitLog << "unit literals: ";
-    // for (const auto &unit : unitsLit)
-    //   unitLog << unit.var() << (unit.sign() ? " negative" : " positive")
-    //           << std::endl;
-    // unitLog << std::endl;
-    // unitLog.close();
     m_specs->preUpdate(unitsLit);
-
 
     // compute the connected component
     std::vector<std::vector<Var>> varConnected;
-    // This step remove variables that are already assigned from the components
     int nbComponent = m_specs->computeConnectedComponent(varConnected, setOfVar,
                                                          freeVariable);
     expelNoDecisionVar(freeVariable, m_isDecisionVariable);
@@ -469,8 +445,6 @@ private:
 
         TmpEntry<U> cb = cacheActivated ? m_cache->searchInCache(connected)
                                         : NULL_CACHE_ENTRY;
-        /** TODO: does the cache work correctly even after the alternative
-         * changes? */
         if (cacheActivated)
           nbTestCacheVarSize[connected.size()]++;
         if (cacheActivated && cb.defined) {
@@ -521,12 +495,14 @@ private:
   /**
      Should Return true if a not yet satisfied alternative clause that is still
      relevent exist in the current connected component, otherwise return false.
-     With relevance we mean that it contain decidable variables still.
+     "Relevent" depend on the clause scoring method used. But this method should
+     always return false , if their is no more alternative clause in the current
+     connected component.
 
      @param[in] connected the current connected component.
      @param[out] clause the literals of the selected alternative clause.
 
-     \return true if a not yet satisfied alternative clause was found.
+     \return true if a relevant alternative clause was found.
   */
   inline bool AlternativeOrVariableBranch(std::vector<Var> &connected,
                                           std::vector<Lit> &clause) {
@@ -537,14 +513,12 @@ private:
   /**
      This function select a variable and compile a decision node.
 
-     @param[in] connected, the set of variable present in the current problem.
-     @param[in] out, the stream whare are printed out the logs.
+     @param[in] connected the set of variable present in the current problem.
+     @param[in] out the stream whare are printed out the logs.
 
      \return the compiled formula.
   */
   U computeDecisionNode(std::vector<Var> &connected, std::ostream &out) {
-    // number_of_choices++;
-    // printstuff();
     std::vector<Var> cutSet;
     std::vector<Lit> original_alternativeClause;
     bool hasPriority = false, hasVariable = false;
@@ -556,8 +530,10 @@ private:
         break;
     }
 
-    if (!hasPriority && clauseScoringEnabled &&
+    // Branch on an alternative clause.
+    if (!hasPriority && m_clauseScoringEnabled &&
         AlternativeOrVariableBranch(connected, original_alternativeClause)) {
+      // update statistics temporary variables
       unsigned parentSequenceLength = m_currentNonBinaryDeterministOrSequence;
       m_nbNonBinaryDeterministOr++;
       if (m_lastNodeWasNonBinaryDeterministOr) {
@@ -574,7 +550,8 @@ private:
 
       vector<Lit> alternativeClause;
 
-      // use this to only create a branch if needed originally.
+      // find literals that are not assigned yet in the alternative clause, to
+      // only branch on them.
       for (auto &l : original_alternativeClause) {
         if (!m_solver->varIsAssigned(l.var())) {
           alternativeClause.push_back(l);
@@ -584,16 +561,18 @@ private:
 
       std::vector<DataBranch<U>> branches;
       branches.reserve(alternativeClause.size());
+      // Branch on the originally not yet decided variables of the alternative
+      // clause.
       for (unsigned i = 0; i < alternativeClause.size(); i++) {
         Lit l = alternativeClause[i];
 
-          m_solver->pushAssumption(l);
-          branches.push_back(DataBranch<U>());
-          branches.back().d = compute_(connected, branches.back().unitLits,
-                                       branches.back().freeVars, out);
-          m_solver->popAssumption();
-          m_currentNonBinaryDeterministOrSequence = parentSequenceLength + 1;
-          m_lastNodeWasNonBinaryDeterministOr = true;
+        m_solver->pushAssumption(l);
+        branches.push_back(DataBranch<U>());
+        branches.back().d = compute_(connected, branches.back().unitLits,
+                                     branches.back().freeVars, out);
+        m_solver->popAssumption();
+        m_currentNonBinaryDeterministOrSequence = parentSequenceLength + 1;
+        m_lastNodeWasNonBinaryDeterministOr = true;
       }
       return m_operation->manageNonBinaryDeterministOr(branches.data(),
                                                        branches.size());
@@ -625,20 +604,22 @@ private:
     m_solver->pushAssumption(l);
     b[0].d = compute_(connected, b[0].unitLits, b[0].freeVars, out);
     m_solver->popAssumption();
+    // update statistics temporary variables
     m_lastNodeWasNonBinaryDeterministOr = false;
     m_currentNonBinaryDeterministOrSequence = 0;
 
-    if (m_solver->isInAssumption(l)){
-      // printstuff();
+    if (m_solver->isInAssumption(l)) {
       b[1].d = m_operation->manageBottom();
     } else if (m_solver->isInAssumption(~l)) {
       b[1].d = compute_(connected, b[1].unitLits, b[1].freeVars, out);
+      // update statistics temporary variables
       m_lastNodeWasNonBinaryDeterministOr = false;
       m_currentNonBinaryDeterministOrSequence = 0;
     } else {
       m_solver->pushAssumption(~l);
       b[1].d = compute_(connected, b[1].unitLits, b[1].freeVars, out);
       m_solver->popAssumption();
+      // update statistics temporary variables
       m_lastNodeWasNonBinaryDeterministOr = false;
       m_currentNonBinaryDeterministOrSequence = 0;
     }
@@ -650,9 +631,9 @@ private:
   /**
      Compute U using the trace of a SAT solver.
 
-     @param[in] setOfVar, the set of variables of the considered problem.
-     @param[in] out, the stream are is print out the logs.
-     @param[in] warmStart, to activate/deactivate the warm start strategy.
+     @param[in] setOfVar the set of variables of the considered problem.
+     @param[in] out the stream are is print out the logs.
+     @param[in] warmStart to activate/deactivate the warm start strategy.
      /!\ When the warm start is activated the assumptions are reset.
 
      \return an element of type U that sums up the given CNF formula using a
@@ -660,21 +641,11 @@ private:
   */
   U compute(std::vector<Var> &setOfVar, std::ostream &out,
             bool warmStart = true) {
-    if (m_problem->isUnsat() || (warmStart && !m_panicMode &&
-                                 !m_solver->warmStart(29, 11, setOfVar, m_out))) {
-      // printstuff();
+    if (m_problem->isUnsat() ||
+        (warmStart && !m_panicMode &&
+         !m_solver->warmStart(29, 11, setOfVar, m_out))) {
       return m_operation->manageBottom();
-      }
-    // try {
-    //   SpecManagerAll &specsAll = dynamic_cast<SpecManagerAll &>(*m_specs);
-    //   specsAll.printAllAsCNF(m_out);
-    //   std::ofstream m_out_file("m_out.txt");
-    //   specsAll.printAllAsCNF(m_out_file);
-    //   // specsAll.showFormula(m_out);
-    // } catch (std::bad_cast &bc) {
-    //   m_out << "c [WARNING] SpecManager is not SpecManagerAll, cannot print "
-    //            "CNF\n";
-    // }
+    }
     DataBranch<U> b;
     b.d = compute_(setOfVar, b.unitLits, b.freeVars, out);
     return m_operation->manageBranch(b);
@@ -686,9 +657,9 @@ public:
      from the query strategy, where we first compute and then condition the
      computed structure.
 
-     @param[in] setOfVar, the set of variables of the considered problem.
-     @param[in] assumption, the set of literals we want to assign.
-     @param[in] out, the stream where are print out the log.
+     @param[in] setOfVar the set of variables of the considered problem.
+     @param[in] assumption the set of literals we want to assign.
+     @param[in] out the stream where are print out the log.
 
      \return the number of models when the formula is simplified by the given
      assumption.
@@ -723,14 +694,6 @@ public:
 
     U result = compute(setOfVar, m_out);
     printFinalStats(m_out);
-    // try {
-    //   SpecManagerAll &specsAll = dynamic_cast<SpecManagerAll &>(*m_specs);
-    //   specsAll.printAllAsCNF(m_out);
-    //   // specsAll.showFormula(m_out);
-    // } catch (std::bad_cast &bc) {
-    //   m_out << "c [WARNING] SpecManager is not SpecManagerAll, cannot print "
-    //            "CNF\n";
-    // }
     m_operation->manageResult(result, config, m_out);
   } // run
 

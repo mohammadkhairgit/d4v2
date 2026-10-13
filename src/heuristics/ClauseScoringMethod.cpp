@@ -32,9 +32,6 @@ ClauseScoringMethod::makeClauseScoringMethod(Config &config, SpecManager &p,
       return new ClauseScoringMethodLiteralMax(mixedSpec, scoringMethod);
     if (meth == "branch-max")
       return new ClauseScoringMethodBranchMax(mixedSpec, scoringMethod);
-    if (meth == "branches-avg-divided-by-distribution")
-      return new ClauseScoringMethodBranchesAvgDividedByDistribution(
-          mixedSpec, scoringMethod);
     if (meth == "none")
       return new ClauseScoringMethodNone(mixedSpec, scoringMethod);
   } catch (std::bad_cast &bc) {

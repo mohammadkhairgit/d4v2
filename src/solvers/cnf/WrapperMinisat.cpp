@@ -44,13 +44,6 @@ void addClauseToSolver(minisat::Solver &solver,
 }
 } // namespace
 
-/**
-   This function initializes the SAT solver with a given problem.  Warning: we
-   suppose that p is a CNF, otherwise a bad_cast exception is threw.
-
-   @param[in] p, the problem we want to link with the SAT solver.
- */
-
 void WrapperMinisat::addClause(std::vector<Lit> &cl, bool learnt) {
   std::vector<minisat::Lit> ps(cl.size());
   for (int i = 0; i < cl.size(); i++) {
@@ -63,13 +56,26 @@ void WrapperMinisat::addClause(std::vector<Lit> &cl, bool learnt) {
     s.learnts.push(cr);
   s.attachClause(cr);
 }
+
+/**
+   This function initializes the SAT solver with a given problem.
+
+   @param[in] p the problem we want to link with the SAT solver.
+ */
 void WrapperMinisat::initSolver(ProblemManager &p) {
   try {
+    // CNF clauses vector tha will be populated.
     std::vector<std::vector<Lit>> cnfClauses;
+    // new variables that will be created by populate_as_cnf_clause, new
+    // variables are added to the solver but not to this wrapper.
     std::vector<Var> createdVars;
+    // the current number of variables in the problem, used to create new
+    // variables in populate_as_cnf_clause.
     unsigned current_number_of_vars = p.getNbVar() + 1;
 
     if (auto *pmix = dynamic_cast<ProblemManagerAll *>(&p)) {
+      // go through all clauses and get their CNF encoding through the
+      // ClauseType classes.
       for (const auto &clause : pmix->getClauses())
         clause->populate_as_cnf_clause(cnfClauses, createdVars,
                                        current_number_of_vars);
@@ -78,10 +84,13 @@ void WrapperMinisat::initSolver(ProblemManager &p) {
       cnfClauses = pcnf.getClauses();
     }
 
+    // Add original variables
     while ((unsigned)s.nVars() <= p.getNbVar())
       s.newVar();
+    // Size the wrapper model to the number of original variables.
     m_model.resize(p.getNbVar() + 1, l_Undef);
 
+    // Add new variables created by the ClauseType classes
     for (unsigned i = 0; i < createdVars.size(); i++)
       s.newVar();
 

@@ -341,7 +341,7 @@ bool SpecManagerCnf::isSatisfiedClause(unsigned idx) {
    Test if a passed clause is satisfied under the current
    interpretation.
 
-   @param[in] c, the index of the clause to be tested for satisfaction.
+   @param[in] c the index of the clause to be tested for satisfaction.
 
    \return true if the clause is satisfied, false otherwise.
 */
