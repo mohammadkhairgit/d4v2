@@ -18,6 +18,7 @@
 #pragma once
 
 #include <cassert>
+#include <map>
 #include <memory>
 #include <unordered_map>
 
@@ -29,8 +30,6 @@
 
 namespace d4 {
 
-/** TODO: Mohammad, just use the struct in SpecManagerCnf?
- */
 struct InfoClusterAll {
   Var parent;
   unsigned size;
@@ -47,13 +46,6 @@ struct InfoClusterAll {
  */
 class SpecManagerAll : public SpecManager {
 
-  /** TODO: Mohammad,: missing non mandatory functions
-          freeVars
-          all getVecIdx
-          NbBinaryClauses
-          getClause
-          ...
-  */
 private:
 protected:
   // The stored clauses of different ClauseTypes.
@@ -62,7 +54,7 @@ protected:
   // clause)
   std::vector<std::unique_ptr<ClauseType>> m_clauses;
   // Current active clause marker divided by clause kind.
-  std::vector<std::unordered_map<unsigned, bool>> m_clausesByType;
+  std::map<ClauseKind, std::unordered_map<unsigned, bool>> m_clausesByType;
   // Indices of clauses that are not binary clauses. Index for the attribute
   // m_clauses.
   std::vector<int> m_clausesNotBinary;
@@ -114,8 +106,8 @@ protected:
    * @param idxCl The index of the clause.
    * @return The kind of the clause.
    */
-  inline std::size_t clauseKindIdx(unsigned idxCl) const {
-    return static_cast<std::size_t>(m_clauses[idxCl]->kind());
+  inline ClauseKind clauseKind(unsigned idxCl) const {
+    return m_clauses[idxCl]->kind();
   }
 
   /**
@@ -124,7 +116,7 @@ protected:
    * @param[in] idxCl The index of the clause.
    */
   inline void removeClauseIndexFromType(unsigned idxCl) {
-    m_clausesByType[clauseKindIdx(idxCl)][idxCl] = false;
+    m_clausesByType[clauseKind(idxCl)][idxCl] = false;
   }
 
   /**
@@ -133,7 +125,7 @@ protected:
    * @param[in] idxCl The index of the clause.
    */
   inline void addClauseIndexToType(unsigned idxCl) {
-    m_clausesByType[clauseKindIdx(idxCl)][idxCl] = true;
+    m_clausesByType[clauseKind(idxCl)][idxCl] = true;
   }
 
 public:
@@ -152,9 +144,8 @@ public:
     for (auto &v : component)
       m_inCurrentComponent[v] = true;
 
-    auto kindIdx = static_cast<std::size_t>(kind);
-    assert(kindIdx < m_clausesByType.size());
-    for (const auto &[idx, isActive] : m_clausesByType[kindIdx]) {
+    auto &clausesOfKind = m_clausesByType[kind];
+    for (const auto &[idx, isActive] : clausesOfKind) {
       if (isActive &&
           isNotSatisfiedClauseAndInComponent((int)idx, m_inCurrentComponent))
         idxClauses.push_back(idx);
@@ -207,7 +198,6 @@ public:
    */
   void preUpdate(std::vector<Lit> &lits) override;
   /**
-   * TODO: Not tested yet.
    * Consider the passed literals as assigned. Update the occurrence data and
    * watchers if conditions are met.
    *

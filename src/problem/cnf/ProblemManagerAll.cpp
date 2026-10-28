@@ -199,11 +199,6 @@ ProblemManagerAll::getConditionedFormula(std::vector<Lit> &units) {
   }
 
   for (const auto &clause : m_clauses) {
-    /*TODO Mohammad: alternatives need to be kept in the problem even after they
-     are satisfied. Or we return satisfied only if we set exactly one literal to
-     true and all other to false Already done that but is that the correct
-     approach?
-     */
     if (!clause->isSatisfied(value))
       ret->m_clauses.push_back(clause->clone());
   }

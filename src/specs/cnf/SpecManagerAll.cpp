@@ -49,8 +49,6 @@ SpecManagerAll::SpecManagerAll(ProblemManager &p) {
                            __LINE__));
   }
 
-  m_clausesByType.resize(2);
-
   m_maxSizeClause = 0;
   unsigned count = 0;
   // Temporary store the occurrence for each literal, contain the indices of

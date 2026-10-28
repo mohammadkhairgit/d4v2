@@ -31,8 +31,6 @@ namespace d4 {
    creation of a new problem manager given an assignment.
  */
 class ProblemManagerAll : public ProblemManager {
-  // TODO Mohammad: should we add vector of vectors that contains indices of
-  // clauses for each kind of clause, so that we can easily access them.
 protected:
   std::vector<std::unique_ptr<ClauseType>> m_clauses;
   std::vector<std::unique_ptr<ClauseType>> m_learnt;

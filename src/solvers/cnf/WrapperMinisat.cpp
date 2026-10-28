@@ -104,10 +104,6 @@ void WrapperMinisat::initSolver(ProblemManager &p) {
   m_activeModel = false;
   m_needModel = false;
   setNeedModel(m_needModel);
-  /** TODO: Mohammad, we save all assumptions even of the new variables is this
-   * wanted? m_isInAssumption is only used here so it most likely does not
-   * matter much and can stay over all.
-   */
   m_isInAssumption.resize(s.nVars(), 0);
 } // initSolver
 

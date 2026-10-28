@@ -41,18 +41,6 @@ enum class ClauseKind { Cnf, Alternative };
  */
 class ClauseType {
 protected:
-  /**
-   * TODO: add an unsigned int variable for non projected count of variable in
-   * this clause and a function that return if the clause have any more
-   * selectable variables. Not related to here but in SpecManagerAll if we add a
-   * list of sorted not yet satisfied clauses, then we need to update them in
-   * per/postupdate. But considering the first solution here I might wait
-   * because maybe I can create scoring classes instead of arrays of clauses
-   * that are sorted.
-   * TODO: add functions that return how many positive
-   * , negative assignments need be set still until fulfillment then update
-   * SpecManager
-   */
   // the literals stored in the clause.
   std::vector<Lit> m_literals;
   // the number of satisfied literals in the clause.
@@ -101,8 +89,6 @@ public:
                          std::vector<Var> &created_vars,
                          unsigned &next_free_variable_number) const = 0;
 
-  // TODO: Mohammad,: For alternative it is not clear if we return true when not
-  // all other literals are false.
   /**
      Test whether the clause is satisfied by the passed partial assignment.
 
@@ -324,7 +310,6 @@ public:
 
     cnf_clauses.push_back(
         std::vector<Lit>{~m_literals[0], Lit::makeLit(auxVars[0], false)});
-    /** TODO: Mohammad, make sure again that everything here is correct */
     for (unsigned i = 1; i + 1 < m_literals.size(); i++) {
       Lit si = Lit::makeLit(auxVars[i], false);
       Lit sim1 = Lit::makeLit(auxVars[i - 1], false);
