@@ -1,5 +1,5 @@
-#include "src/problem/cnf/ClauseType.hpp"
-#include "src/problem/cnf/ProblemManagerAll.hpp"
+#include "src/problem/allClauses/ClauseType.hpp"
+#include "src/problem/allClauses/ProblemManagerAll.hpp"
 
 #include <gtest/gtest.h>
 

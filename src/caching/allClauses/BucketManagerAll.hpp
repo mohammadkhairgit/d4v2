@@ -21,11 +21,11 @@
 #include <iostream>
 #include <vector>
 
-#include "../BucketAllocator.hpp"
-#include "../BucketManager.hpp"
-#include "../CachedBucket.hpp"
+#include "src/caching/BucketAllocator.hpp"
+#include "src/caching/BucketManager.hpp"
+#include "src/caching/CachedBucket.hpp"
 #include "src/problem/ProblemTypes.hpp"
-#include "src/specs/cnf/SpecManagerAll.hpp"
+#include "src/specs/allClauses/SpecManagerAll.hpp"
 #include "src/utils/Enum.hpp"
 
 namespace d4 {

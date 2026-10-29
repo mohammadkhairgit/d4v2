@@ -24,10 +24,10 @@
 #include <cstdint>
 #include <cstring>
 
-#include "BucketInConstruction.hpp"
-#include "BucketSortInfo.hpp"
+#include "src/caching/cnf/BucketInConstruction.hpp"
+#include "src/caching/cnf/BucketSortInfo.hpp"
 #include "src/caching/CacheManager.hpp"
-#include "src/caching/cnf/BucketManagerAll.hpp"
+#include "src/caching/allClauses/BucketManagerAll.hpp"
 #include "src/exceptions/BucketException.hpp"
 #include "src/problem/ProblemTypes.hpp"
 #include "src/utils/Enum.hpp"

@@ -20,7 +20,7 @@
 #include "cnf/ScoringMethodDlcs.hpp"
 #include "cnf/ScoringMethodJwts.hpp"
 #include "cnf/ScoringMethodMom.hpp"
-#include "cnf/ScoringMethodMomAll.hpp"
+#include "allClauses/ScoringMethodMomAll.hpp"
 #include "cnf/ScoringMethodVsads.hpp"
 #include "cnf/ScoringMethodVsids.hpp"
 #include "src/exceptions/FactoryException.hpp"

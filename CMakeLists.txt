@@ -18,6 +18,7 @@ option(D4_BUILD_TESTS "Build and register test targets" ON)
 if(NOT BUILD_SHARED_LIBS)
     set(GMP_USE_STATIC_LIBS ON)
     set(Boost_USE_STATIC_LIBS ON)
+    set(GTest_USE_STATIC_LIBS ON)
     set(MtKaHyPar_USE_STATIC_LIBS ON)
     set(glucose_USE_STATIC_LIBS ON)
 endif()
@@ -70,7 +71,7 @@ add_library(heuristics OBJECT
     src/heuristics/cnf/ScoringMethodDlcs.cpp
     src/heuristics/cnf/ScoringMethodJwts.cpp
     src/heuristics/cnf/ScoringMethodMom.cpp
-    src/heuristics/cnf/ScoringMethodMomAll.cpp
+    src/heuristics/allClauses/ScoringMethodMomAll.cpp
     src/heuristics/cnf/ScoringMethodVsads.cpp
     src/heuristics/cnf/ScoringMethodVsids.cpp
     src/heuristics/clauseScoring/alternative/ClauseScoringMethodLiteralMetric.cpp
@@ -117,7 +118,7 @@ add_library(preprocs OBJECT
 )
 
 add_library(problem OBJECT
-    src/problem/cnf/ProblemManagerAll.cpp
+    src/problem/allClauses/ProblemManagerAll.cpp
     src/problem/cnf/ParserDimacs.cpp
     src/problem/cnf/ProblemManagerCnf.cpp
     src/problem/ProblemManager.cpp
@@ -136,7 +137,7 @@ if(USE_GLUCOSE)
 endif()
 
 add_library(spec OBJECT
-    src/specs/cnf/SpecManagerAll.cpp
+    src/specs/allClauses/SpecManagerAll.cpp
     src/specs/cnf/SpecManagerCnf.cpp
     src/specs/cnf/SpecManagerCnfDyn.cpp
     src/specs/SpecManager.cpp
@@ -198,11 +199,6 @@ if(D4_BUILD_TESTS)
     target_link_libraries(SpecManagerTest PRIVATE core GTest::gtest_main)
     add_test(NAME SpecManagerTest COMMAND SpecManagerTest)
     set_tests_properties(SpecManagerTest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-
-    add_executable(WrapperMinisatTest tests/alternative/solver/WrapperMinisatTest.cpp)
-    target_link_libraries(WrapperMinisatTest PRIVATE core GTest::gtest_main)
-    add_test(NAME WrapperMinisatTest COMMAND WrapperMinisatTest)
-    set_tests_properties(WrapperMinisatTest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 endif()
 

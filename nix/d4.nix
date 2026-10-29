@@ -5,6 +5,7 @@
   cmake,
   boost,
   gmp,
+  gtest,
   mpfr,
   zlib,
   mt-kahypar,
@@ -31,6 +32,7 @@ stdenv.mkDerivation rec {
     arjun.dev
     boost.dev
     gmp.dev
+    gtest
     mpfr.dev
     zlib.dev
     gpmc.dev
