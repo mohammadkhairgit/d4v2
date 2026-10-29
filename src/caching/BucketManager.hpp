@@ -26,7 +26,7 @@
 
 #include "BucketAllocator.hpp"
 #include "CachedBucket.hpp"
-#include "cnf/BucketManagerAllCl.hpp"
+#include "src/caching/allClauses/BucketManagerAllCl.hpp"
 #include "cnf/BucketManagerCnf.hpp"
 #include "cnf/BucketManagerCnfCl.hpp"
 #include "cnf/BucketManagerCnfCombi.hpp"

@@ -23,9 +23,9 @@
 #include <unordered_map>
 
 #include "../SpecManager.hpp"
-#include "DataOccurrence.hpp"
-#include "src/problem/cnf/ClauseType.hpp"
-#include "src/problem/cnf/ProblemManagerAll.hpp"
+#include "src/specs/cnf/DataOccurrence.hpp"
+#include "src/problem/allClauses/ClauseType.hpp"
+#include "src/problem/allClauses/ProblemManagerAll.hpp"
 #include "src/utils/Enum.hpp"
 
 namespace d4 {

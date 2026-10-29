@@ -2,8 +2,8 @@
 #include <functional>
 #include <src/heuristics/ScoringMethod.hpp>
 #include <src/problem/ProblemTypes.hpp>
-#include <src/problem/cnf/ClauseType.hpp>
-#include <src/specs/cnf/SpecManagerAll.hpp>
+#include <src/problem/allClauses/ClauseType.hpp>
+#include <src/specs/allClauses/SpecManagerAll.hpp>
 #include <vector>
 
 namespace d4 {

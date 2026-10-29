@@ -19,7 +19,7 @@
 
 #include <iostream>
 
-#include "cnf/ProblemManagerAll.hpp"
+#include "allClauses/ProblemManagerAll.hpp"
 #include "cnf/ProblemManagerCnf.hpp"
 #include "src/exceptions/FactoryException.hpp"
 

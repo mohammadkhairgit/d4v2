@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include "src/exceptions/FactoryException.hpp"
-#include "src/specs/cnf/SpecManagerAll.hpp"
+#include "src/specs/allClauses/SpecManagerAll.hpp"
 
 namespace d4 {
 

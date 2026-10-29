@@ -70,7 +70,7 @@ add_library(heuristics OBJECT
     src/heuristics/cnf/ScoringMethodDlcs.cpp
     src/heuristics/cnf/ScoringMethodJwts.cpp
     src/heuristics/cnf/ScoringMethodMom.cpp
-    src/heuristics/cnf/ScoringMethodMomAll.cpp
+    src/heuristics/allClauses/ScoringMethodMomAll.cpp
     src/heuristics/cnf/ScoringMethodVsads.cpp
     src/heuristics/cnf/ScoringMethodVsids.cpp
     src/heuristics/clauseScoring/alternative/ClauseScoringMethodLiteralMetric.cpp
@@ -117,7 +117,7 @@ add_library(preprocs OBJECT
 )
 
 add_library(problem OBJECT
-    src/problem/cnf/ProblemManagerAll.cpp
+    src/problem/allClauses/ProblemManagerAll.cpp
     src/problem/cnf/ParserDimacs.cpp
     src/problem/cnf/ProblemManagerCnf.cpp
     src/problem/ProblemManager.cpp
@@ -136,7 +136,7 @@ if(USE_GLUCOSE)
 endif()
 
 add_library(spec OBJECT
-    src/specs/cnf/SpecManagerAll.cpp
+    src/specs/allClauses/SpecManagerAll.cpp
     src/specs/cnf/SpecManagerCnf.cpp
     src/specs/cnf/SpecManagerCnfDyn.cpp
     src/specs/SpecManager.cpp
