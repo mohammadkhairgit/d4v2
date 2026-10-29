@@ -1,6 +1,6 @@
 #include "src/problem/ProblemManager.hpp"
-#include "src/problem/cnf/ClauseType.hpp"
-#include "src/specs/cnf/SpecManagerAll.hpp"
+#include "src/problem/allClauses/ClauseType.hpp"
+#include "src/specs/allClauses/SpecManagerAll.hpp"
 
 #include <gtest/gtest.h>
 

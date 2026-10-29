@@ -24,7 +24,7 @@
 #include "minisat/Solver.hpp"
 #include "minisat/SolverTypes.hpp"
 #include "minisat/mtl/Vec.hpp"
-#include "src/problem/cnf/ProblemManagerAll.hpp"
+#include "src/problem/allClauses/ProblemManagerAll.hpp"
 #include "src/problem/cnf/ProblemManagerCnf.hpp"
 
 namespace d4 {

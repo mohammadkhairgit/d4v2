@@ -20,7 +20,7 @@
 #include <memory>
 
 #include "ClauseType.hpp"
-#include "ParserDimacs.hpp"
+#include "src/problem/cnf/ParserDimacs.hpp"
 #include "src/problem/ProblemManager.hpp"
 
 namespace d4 {

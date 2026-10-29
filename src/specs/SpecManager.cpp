@@ -17,7 +17,7 @@
  */
 #include "SpecManager.hpp"
 
-#include "cnf/SpecManagerAll.hpp"
+#include "allClauses/SpecManagerAll.hpp"
 #include "cnf/SpecManagerCnfDyn.hpp"
 #include "src/exceptions/FactoryException.hpp"
 
