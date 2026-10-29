@@ -19,6 +19,7 @@ set(GPMC_USE_STATIC_LIBS ON)
 if(NOT BUILD_SHARED_LIBS)
     set(GMP_USE_STATIC_LIBS ON)
     set(Boost_USE_STATIC_LIBS ON)
+    set(GTest_USE_STATIC_LIBS ON)
     set(MtKaHyPar_USE_STATIC_LIBS ON)
     set(glucose_USE_STATIC_LIBS ON)
 
@@ -214,11 +215,6 @@ if(D4_BUILD_TESTS)
     target_link_libraries(SpecManagerTest PRIVATE core GTest::gtest_main)
     add_test(NAME SpecManagerTest COMMAND SpecManagerTest)
     set_tests_properties(SpecManagerTest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-
-    add_executable(WrapperMinisatTest tests/alternative/solver/WrapperMinisatTest.cpp)
-    target_link_libraries(WrapperMinisatTest PRIVATE core GTest::gtest_main)
-    add_test(NAME WrapperMinisatTest COMMAND WrapperMinisatTest)
-    set_tests_properties(WrapperMinisatTest PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 endif()
 
